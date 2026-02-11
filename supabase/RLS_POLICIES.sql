@@ -60,6 +60,9 @@ USING (has_role(auth.uid(), 'admin'));
 
 -- =====================================================
 -- CATEGORIES - Public read, admin write
+-- =====================================================
+
+-- Anyone can view active categories
 DROP POLICY IF EXISTS "Anyone can view categories" ON categories;
 CREATE POLICY "Anyone can view categories"
 ON categories FOR SELECT
@@ -79,14 +82,15 @@ USING (has_role(auth.uid(), 'admin'));
 
 -- Admins can delete categories
 DROP POLICY IF EXISTS "Admins can delete categories" ON categories;
-USING (has_role(auth.uid(), 'admin'));
-
--- Admins can delete categories
 CREATE POLICY "Admins can delete categories"
 ON categories FOR DELETE
 USING (has_role(auth.uid(), 'admin'));
 
 -- =====================================================
+-- MENU_ITEMS - Public read, admin write
+-- =====================================================
+
+-- Anyone can view available menu items
 DROP POLICY IF EXISTS "Anyone can view menu items" ON menu_items;
 CREATE POLICY "Anyone can view menu items"
 ON menu_items FOR SELECT
@@ -105,27 +109,23 @@ ON menu_items FOR UPDATE
 USING (has_role(auth.uid(), 'admin'));
 
 -- Admins can delete menu items
-DROP POLICY IF EXISTS "Admins can delete menu items" ON menu_items;e menu items"
-ON menu_items FOR UPDATE
-USING (has_role(auth.uid(), 'admin'));
-
--- Admins can delete menu items
+DROP POLICY IF EXISTS "Admins can delete menu items" ON menu_items;
 CREATE POLICY "Admins can delete menu items"
 ON menu_items FOR DELETE
 USING (has_role(auth.uid(), 'admin'));
 
 -- =====================================================
+-- DELIVERY_ZONES - Public read, admin write
+-- =====================================================
+
+-- Anyone can view active delivery zones
 DROP POLICY IF EXISTS "Anyone can view delivery zones" ON delivery_zones;
 CREATE POLICY "Anyone can view delivery zones"
 ON delivery_zones FOR SELECT
 USING (is_active = true OR has_role(auth.uid(), 'admin'));
 
 -- Admins can manage delivery zones
-DROP POLICY IF EXISTS "Admins can manage delivery zones" ON delivery_zones;very zones"
-ON delivery_zones FOR SELECT
-USING (is_active = true OR has_role(auth.uid(), 'admin'));
-
--- Admins can manage delivery zones
+DROP POLICY IF EXISTS "Admins can manage delivery zones" ON delivery_zones;
 CREATE POLICY "Admins can manage delivery zones"
 ON delivery_zones FOR ALL
 USING (has_role(auth.uid(), 'admin'))
@@ -134,21 +134,25 @@ WITH CHECK (has_role(auth.uid(), 'admin'));
 -- =====================================================
 -- COUPONS - Limited read, admin write
 -- =====================================================
+
+-- Users can check if coupon is valid (via code lookup)
 DROP POLICY IF EXISTS "Users can check coupons" ON coupons;
 CREATE POLICY "Users can check coupons"
 ON coupons FOR SELECT
 USING (is_active = true OR has_role(auth.uid(), 'admin'));
 
 -- Admins can manage coupons
-DROP POLICY IF EXISTS "Admins can manage coupons" ON coupons;as_role(auth.uid(), 'admin'));
-
--- Admins can manage coupons
+DROP POLICY IF EXISTS "Admins can manage coupons" ON coupons;
 CREATE POLICY "Admins can manage coupons"
 ON coupons FOR ALL
 USING (has_role(auth.uid(), 'admin'))
 WITH CHECK (has_role(auth.uid(), 'admin'));
 
 -- =====================================================
+-- ORDERS - Users see own orders, admins see all
+-- =====================================================
+
+-- Users can view their own orders
 DROP POLICY IF EXISTS "Users can view own orders" ON orders;
 CREATE POLICY "Users can view own orders"
 ON orders FOR SELECT
@@ -161,15 +165,16 @@ ON orders FOR INSERT
 WITH CHECK (auth.uid() = user_id);
 
 -- Admins can update order status
-DROP POLICY IF EXISTS "Admins can update orders" ON orders;rders"
-ON orders FOR INSERT
-WITH CHECK (auth.uid() = user_id);
-
--- Admins can update order status
+DROP POLICY IF EXISTS "Admins can update orders" ON orders;
 CREATE POLICY "Admins can update orders"
 ON orders FOR UPDATE
 USING (has_role(auth.uid(), 'admin'));
 
+-- =====================================================
+-- ORDER_ITEMS - Tied to order permissions
+-- =====================================================
+
+-- Users can view their own order items
 DROP POLICY IF EXISTS "Users can view own order items" ON order_items;
 CREATE POLICY "Users can view own order items"
 ON order_items FOR SELECT
@@ -183,11 +188,6 @@ USING (
 
 -- Users can insert order items when creating order
 DROP POLICY IF EXISTS "Users can insert order items" ON order_items;
-    AND (orders.user_id = auth.uid() OR has_role(auth.uid(), 'admin'))
-  )
-);
-
--- Users can insert order items when creating order
 CREATE POLICY "Users can insert order items"
 ON order_items FOR INSERT
 WITH CHECK (
@@ -198,6 +198,11 @@ WITH CHECK (
   )
 );
 
+-- =====================================================
+-- REVIEWS - Users can review their completed orders
+-- =====================================================
+
+-- Anyone can view approved reviews
 DROP POLICY IF EXISTS "Anyone can view reviews" ON reviews;
 CREATE POLICY "Anyone can view reviews"
 ON reviews FOR SELECT
@@ -219,11 +224,6 @@ WITH CHECK (
 
 -- Users can update their own reviews
 DROP POLICY IF EXISTS "Users can update own reviews" ON reviews;
-    AND orders.status = 'delivered'
-  )
-);
-
--- Users can update their own reviews
 CREATE POLICY "Users can update own reviews"
 ON reviews FOR UPDATE
 USING (auth.uid() = user_id);
