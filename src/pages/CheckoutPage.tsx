@@ -5,81 +5,89 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, MapPin, Clock, CreditCard, Banknote } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, MapPin, MessageSquare } from "lucide-react";
+import { useDeliveryZones } from "@/hooks/useDeliveryZones";
+import { useCoupons } from "@/hooks/useCoupons";
 
 const CheckoutPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { items, totalPrice, clearCart } = useCart();
+  const { data: zones } = useDeliveryZones();
+  const { validateCoupon } = useCoupons();
+  
   const [address, setAddress] = useState("");
   const [zoneId, setZoneId] = useState("");
-  const [deliveryTime, setDeliveryTime] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("card");
   const [couponCode, setCouponCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const { data: zones } = useQuery({
-    queryKey: ["delivery_zones"],
-    queryFn: async () => {
-      const { data } = await supabase.from("delivery_zones").select("*").order("name");
-      return data || [];
-    },
-  });
+  const [phone, setPhone] = useState("");
 
   const selectedZone = zones?.find((z) => z.id === zoneId);
   const deliveryFee = selectedZone?.fee || 0;
   const finalTotal = totalPrice - discount + deliveryFee;
 
   const applyCoupon = async () => {
-    if (!couponCode) return;
-    const { data } = await supabase
-      .from("coupons")
-      .select("*")
-      .eq("code", couponCode.toUpperCase())
-      .eq("is_active", true)
-      .maybeSingle();
-
-    if (!data) {
-      toast.error(t("error_occurred"));
-      return;
+    if (!couponCode.trim()) return;
+    const result = await validateCoupon(couponCode, totalPrice);
+    if (result.valid) {
+      setDiscount(result.discount);
     }
-    if (data.min_order && totalPrice < data.min_order) {
-      toast.error(`${t("min_order_aed")} ${data.min_order}`);
-      return;
-    }
-    const disc = data.discount_type === "percentage"
-      ? (totalPrice * data.discount_value) / 100
-      : data.discount_value;
-    setDiscount(disc);
-    toast.success(`${t("coupon_applied")}! -AED ${disc.toFixed(2)}`);
   };
 
   const handlePlaceOrder = async () => {
-    if (!user) { navigate("/auth"); return; }
-    if (!address || !zoneId) { toast.error(t("fill_delivery_details")); return; }
-    if (items.length === 0) return;
+    // Validations
+    if (!user) {
+      toast.error(t("not_logged_in"));
+      navigate("/auth");
+      return;
+    }
+    
+    if (!address.trim()) {
+      toast.error(t("fill_delivery_details"));
+      return;
+    }
+    
+    if (!phone.trim()) {
+      toast.error("Por favor, informe seu telefone");
+      return;
+    }
+    
+    if (!zoneId) {
+      toast.error("Por favor, selecione a zona de entrega");
+      return;
+    }
+
+    if (items.length === 0) {
+      toast.error(t("empty_cart"));
+      return;
+    }
 
     setLoading(true);
     try {
-      const { data: order, error } = await supabase.from("orders").insert({
-        user_id: user.id,
-        subtotal: totalPrice,
-        delivery_fee: deliveryFee,
-        discount,
-        total: finalTotal,
-        delivery_address: address,
-        delivery_zone_id: zoneId,
-        delivery_time: deliveryTime,
-        payment_method: paymentMethod,
-        notes,
-      }).select().single();
+      // Create order
+      const { data: order, error } = await supabase
+        .from("orders")
+        .insert({
+          user_id: user.id,
+          subtotal: totalPrice,
+          delivery_fee: deliveryFee,
+          discount,
+          total: finalTotal,
+          delivery_address: `${address} | Tel: ${phone}`,
+          delivery_zone_id: zoneId,
+          payment_method: "cash",
+          notes: notes.trim() || null,
+          status: "pending",
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
+      // Create order items
       const orderItems = items.map((item) => ({
         order_id: order.id,
         menu_item_id: item.id,
@@ -90,11 +98,13 @@ const CheckoutPage = () => {
       const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
       if (itemsError) throw itemsError;
 
+      // Clear cart and navigate
       clearCart();
       toast.success(t("order_placed"));
       navigate("/orders");
     } catch (err: any) {
-      toast.error(err.message);
+      console.error("Order error:", err);
+      toast.error(err.message || t("error_occurred"));
     } finally {
       setLoading(false);
     }
@@ -121,7 +131,7 @@ const CheckoutPage = () => {
         </div>
       </header>
 
-      <div className="container py-6 max-w-lg space-y-6">
+      <div className="container py-6 max-w-lg space-y-4">
         {/* Order Summary */}
         <div className="bg-card rounded-xl border border-border p-4 space-y-3">
           <h3 className="font-display font-bold text-foreground">{t("your_cart")}</h3>
@@ -134,16 +144,27 @@ const CheckoutPage = () => {
         </div>
 
         {/* Delivery Details */}
-        <div className="bg-card rounded-xl border border-border p-4 space-y-4">
+        <div className="bg-card rounded-xl border border-border p-4 space-y-3">
           <h3 className="font-display font-bold text-foreground flex items-center gap-2">
             <MapPin className="w-4 h-4 text-primary" /> {t("delivery_address")}
           </h3>
+          
           <input
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            placeholder={t("delivery_address")}
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="Telefone (ex: +971 50 123 4567)"
             className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
+          
+          <textarea
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="Endereço completo (rua, número, apartamento, referências)"
+            rows={3}
+            className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+          />
+          
           <select
             value={zoneId}
             onChange={(e) => setZoneId(e.target.value)}
@@ -151,40 +172,25 @@ const CheckoutPage = () => {
           >
             <option value="">{t("select_zone")}</option>
             {zones?.map((z) => (
-              <option key={z.id} value={z.id}>{z.name} - AED {z.fee}</option>
+              <option key={z.id} value={z.id}>
+                {z.name} - AED {z.fee} taxa de entrega
+              </option>
             ))}
           </select>
-
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-primary" />
-            <input
-              type="time"
-              value={deliveryTime}
-              onChange={(e) => setDeliveryTime(e.target.value)}
-              className="flex-1 px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
         </div>
 
-        {/* Payment */}
+        {/* Notes */}
         <div className="bg-card rounded-xl border border-border p-4 space-y-3">
-          <h3 className="font-display font-bold text-foreground">{t("payment_method")}</h3>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setPaymentMethod("card")}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border text-sm font-display font-semibold transition-all ${paymentMethod === "card" ? "border-primary bg-primary/10 text-primary" : "border-input text-muted-foreground"
-                }`}
-            >
-              <CreditCard className="w-4 h-4" /> {t("card")}
-            </button>
-            <button
-              onClick={() => setPaymentMethod("cash")}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border text-sm font-display font-semibold transition-all ${paymentMethod === "cash" ? "border-primary bg-primary/10 text-primary" : "border-input text-muted-foreground"
-                }`}
-            >
-              <Banknote className="w-4 h-4" /> {t("cash")}
-            </button>
-          </div>
+          <h3 className="font-display font-bold text-foreground flex items-center gap-2">
+            <MessageSquare className="w-4 h-4 text-primary" /> {t("notes")}
+          </h3>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Observações especiais (sem cebola, ponto da carne, etc.)"
+            rows={2}
+            className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+          />
         </div>
 
         {/* Coupon */}
@@ -193,45 +199,58 @@ const CheckoutPage = () => {
           <div className="flex gap-2">
             <input
               value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value)}
+              onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
               placeholder="WELCOME10"
-              className="flex-1 px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="flex-1 px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary uppercase"
             />
-            <button onClick={applyCoupon} className="px-4 py-3 bg-primary text-primary-foreground rounded-lg font-display font-semibold text-sm">
+            <button 
+              onClick={applyCoupon} 
+              disabled={!couponCode.trim()}
+              className="px-4 py-3 bg-primary text-primary-foreground rounded-lg font-display font-semibold text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
               {t("apply")}
             </button>
           </div>
         </div>
 
-        {/* Notes */}
-        <div className="bg-card rounded-xl border border-border p-4">
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder={t("notes")}
-            rows={2}
-            className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-          />
-        </div>
-
         {/* Totals */}
         <div className="bg-card rounded-xl border border-border p-4 space-y-2">
-          <div className="flex justify-between text-sm"><span className="text-muted-foreground">{t("subtotal")}</span><span className="text-foreground">AED {totalPrice.toFixed(2)}</span></div>
-          {discount > 0 && <div className="flex justify-between text-sm"><span className="text-success">{t("discount")}</span><span className="text-success">-AED {discount.toFixed(2)}</span></div>}
-          <div className="flex justify-between text-sm"><span className="text-muted-foreground">{t("delivery_fee")}</span><span className="text-foreground">AED {deliveryFee.toFixed(2)}</span></div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">{t("subtotal")}</span>
+            <span className="text-foreground">AED {totalPrice.toFixed(2)}</span>
+          </div>
+          {discount > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-success">{t("discount")}</span>
+              <span className="text-success">-AED {discount.toFixed(2)}</span>
+            </div>
+          )}
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">{t("delivery_fee")}</span>
+            <span className="text-foreground">AED {deliveryFee.toFixed(2)}</span>
+          </div>
           <div className="flex justify-between font-display font-bold text-lg border-t border-border pt-2">
             <span className="text-foreground">{t("total")}</span>
             <span className="text-primary">AED {finalTotal.toFixed(2)}</span>
           </div>
+          <p className="text-xs text-muted-foreground text-center pt-2">
+            💵 Pagamento em dinheiro na entrega
+          </p>
         </div>
 
         <button
           onClick={handlePlaceOrder}
-          disabled={loading}
-          className="w-full bg-primary text-primary-foreground py-4 rounded-full font-display font-bold text-base hover:brightness-110 transition-all disabled:opacity-50 shadow-lg shadow-primary/20"
+          disabled={loading || !address || !phone || !zoneId}
+          className="w-full bg-primary text-primary-foreground py-4 rounded-full font-display font-bold text-base hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20"
         >
-          {loading ? "..." : `${t("place_order")} — AED ${finalTotal.toFixed(2)}`}
+          {loading ? "Processando..." : `${t("place_order")} — AED ${finalTotal.toFixed(2)}`}
         </button>
+        
+        {(!address || !phone || !zoneId) && (
+          <p className="text-xs text-center text-muted-foreground">
+            Preencha todos os campos obrigatórios para continuar
+          </p>
+        )}
       </div>
     </div>
   );

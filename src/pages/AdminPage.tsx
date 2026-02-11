@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Package, UtensilsCrossed, Tag, BarChart3, LogOut, ChevronRight } from "lucide-react";
+import { Package, UtensilsCrossed, Tag, BarChart3, LogOut } from "lucide-react";
+import { useAdminOrders } from "@/hooks/useOrders";
+import { useMenuItems } from "@/hooks/useMenuItems";
+import { useCoupons } from "@/hooks/useCoupons";
+import { supabase } from "@/integrations/supabase/client";
 
 type Tab = "orders" | "menu" | "coupons" | "reports";
 
@@ -78,31 +81,19 @@ const AdminPage = () => {
 };
 
 function AdminOrders() {
-  const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
+  const { orders, loading, updateOrderStatus } = useAdminOrders();
 
-  const fetchOrders = async () => {
-    const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
-    setOrders(data || []);
-    setLoading(false);
+  const handleStatusChange = async (orderId: string, status: string) => {
+    const { error } = await updateOrderStatus(orderId, status);
+    if (error) {
+      toast.error(t("error_occurred"));
+    } else {
+      toast.success(t("updated_success"));
+    }
   };
 
-  useEffect(() => {
-    fetchOrders();
-    const channel = supabase
-      .channel("admin-orders")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => fetchOrders())
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, []);
-
-  const updateStatus = async (orderId: string, status: string) => {
-    await supabase.from("orders").update({ status }).eq("id", orderId);
-    toast.success(`${t("orders")}: ${status}`);
-  };
-
-  if (loading) return <p className="text-muted-foreground text-center py-8">{t("listing_categories")}...</p>;
+  if (loading) return <p className="text-muted-foreground text-center py-8">{t("loading")}</p>;
 
   return (
     <div className="space-y-4 max-w-2xl">
@@ -121,11 +112,12 @@ function AdminOrders() {
             {statusOptions.map((s) => (
               <button
                 key={s}
-                onClick={() => updateStatus(order.id, s)}
-                className={`text-xs px-2.5 py-1 rounded-full font-display font-semibold transition-all ${order.status === s ? statusColors[s] : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  }`}
+                onClick={() => handleStatusChange(order.id, s)}
+                className={`text-xs px-2.5 py-1 rounded-full font-display font-semibold transition-all ${
+                  order.status === s ? statusColors[s] : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
               >
-                {s}
+                {t(s)}
               </button>
             ))}
           </div>
