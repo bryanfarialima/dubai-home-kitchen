@@ -414,7 +414,7 @@ const resources = {
       item_deleted: "تم حذف الطبق",
       welcome_back: "أهلا وسهلا!",
       account_created: "تم إنشاء الحساب! يرجى التحقق من بريدك الإلكتروني.",
-      error_occurred: "حدث خطأ",      phone_required: "يرجى إدخال رقم هاتفك",
+      error_occurred: "حدث خطأ", phone_required: "يرجى إدخال رقم هاتفك",
       location_type_required: "يرجى اختيار نوع الموقع",
       phone_placeholder: "الهاتف (مثل: +971 50 123 4567)",
       select_location_type: "اختر نوع الموقع",
