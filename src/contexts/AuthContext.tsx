@@ -94,7 +94,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut({ scope: "local" });
+    if (error) {
+      console.error("Supabase signOut error:", error.message);
+    }
+    // Ensure local auth state is cleared even if signOut fails
+    try {
+      Object.keys(localStorage)
+        .filter((key) => key.startsWith("sb-"))
+        .forEach((key) => localStorage.removeItem(key));
+    } catch (storageError) {
+      console.error("Failed to clear auth storage:", storageError);
+    }
     setUser(null);
     setSession(null);
     setIsAdmin(false);
