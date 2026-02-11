@@ -102,17 +102,30 @@ const MenuSection = () => {
   };
 
   const categoryTranslations: Record<string, string> = {
-    all: t("all"), 
-    mains: t("mains"), 
+    all: t("all"),
+    mains: t("mains"),
     snacks: t("snacks"),
-    desserts: t("desserts"), 
-    combos: t("combos"), 
+    desserts: t("desserts"),
+    combos: t("combos"),
     promos: t("promos"),
   };
 
-  const filtered = activeCategory === "all" 
-    ? menuItems 
+  const filtered = activeCategory === "all"
+    ? menuItems
     : menuItems.filter((i) => i.category_id === activeCategory);
+
+  // Map database items to FoodCard format
+  const mappedItems = filtered.map((item) => ({
+    id: item.id,
+    name: item.name,
+    description: item.description,
+    price: item.price,
+    image: item.image_url || "", // Map image_url to image
+    category: item.category_id as any,
+    rating: 4.8, // Default rating (add to DB later if needed)
+    reviews: 50, // Default reviews count
+    badge: item.badge || undefined,
+  }));
 
   if (loading) {
     return (
@@ -135,11 +148,10 @@ const MenuSection = () => {
         <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-hide">
           <button
             onClick={() => setActiveCategory("all")}
-            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-display font-semibold whitespace-nowrap transition-all ${
-              activeCategory === "all"
+            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-display font-semibold whitespace-nowrap transition-all ${activeCategory === "all"
                 ? "bg-primary text-primary-foreground shadow-md"
                 : "bg-muted text-muted-foreground hover:bg-primary/10"
-            }`}
+              }`}
           >
             <span>🍽️</span>
             {t("all")}
@@ -148,11 +160,10 @@ const MenuSection = () => {
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
-              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-display font-semibold whitespace-nowrap transition-all ${
-                activeCategory === cat.id
+              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-display font-semibold whitespace-nowrap transition-all ${activeCategory === cat.id
                   ? "bg-primary text-primary-foreground shadow-md"
                   : "bg-muted text-muted-foreground hover:bg-primary/10"
-              }`}
+                }`}
             >
               <span>{cat.emoji}</span>
               {cat.name}
@@ -161,13 +172,13 @@ const MenuSection = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {filtered.length === 0 ? (
+          {mappedItems.length === 0 ? (
             <p className="col-span-full text-center text-muted-foreground py-8">
               {t("no_items_available")}
             </p>
           ) : (
-            filtered.map((item, index) => (
-              <FoodCard key={item.id} item={item as any} index={index} />
+            mappedItems.map((item, index) => (
+              <FoodCard key={item.id} item={item} index={index} />
             ))
           )}
         </div>
