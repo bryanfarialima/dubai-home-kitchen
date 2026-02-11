@@ -27,12 +27,15 @@ const CheckoutPage = () => {
 
   const deliveryFee = 0; // Free delivery
   const finalTotal = totalPrice - discount + deliveryFee;
+  const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
   const applyCoupon = async () => {
     if (!couponCode.trim()) return;
     const result = await validateCoupon(couponCode, totalPrice);
     if (result.valid) {
       setDiscount(result.discount);
+    } else {
+      setDiscount(0);
     }
   };
 
@@ -61,6 +64,13 @@ const CheckoutPage = () => {
 
     if (items.length === 0) {
       toast.error(t("empty_cart"));
+      return;
+    }
+
+    const hasInvalidItems = items.some((item) => !isUuid(item.id));
+    if (hasInvalidItems) {
+      toast.error(t("invalid_cart_items"));
+      clearCart();
       return;
     }
 

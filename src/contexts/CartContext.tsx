@@ -20,13 +20,23 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const CART_STORAGE_KEY = "sabor_de_casa_cart";
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const isUuid = (value: string) => UUID_REGEX.test(value);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>(() => {
-    // Load cart from localStorage on init
+    // Load cart from localStorage on init and drop invalid item ids
     try {
       const saved = localStorage.getItem(CART_STORAGE_KEY);
-      return saved ? JSON.parse(saved) : [];
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      if (!Array.isArray(parsed)) return [];
+      const filtered = parsed.filter((item) => item?.id && isUuid(item.id));
+      if (filtered.length !== parsed.length) {
+        localStorage.removeItem(CART_STORAGE_KEY);
+      }
+      return filtered;
     } catch {
       return [];
     }

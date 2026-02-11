@@ -142,6 +142,7 @@ const resources = {
       fill_required_fields: "Fill in all required fields to continue",
       limited_time: "Limited time!",
       no_items_available: "No items available in this category",
+      invalid_cart_items: "Your cart had outdated items. Please add items again.",
     }
   },
   pt: {
@@ -284,6 +285,7 @@ const resources = {
       fill_required_fields: "Preencha todos os campos obrigatórios para continuar",
       limited_time: "Por tempo limitado!",
       no_items_available: "Nenhum item disponível nesta categoria",
+      invalid_cart_items: "Seu carrinho tinha itens desatualizados. Adicione novamente.",
     }
   },
   ar: {
@@ -425,6 +427,7 @@ const resources = {
       fill_required_fields: "املأ جميع الحقول المطلوبة للمتابعة",
       limited_time: "لفترة محدودة!",
       no_items_available: "لا توجد عناصر متاحة في هذه الفئة",
+      invalid_cart_items: "كانت سلة التسوق تحتوي على عناصر قديمة. يرجى الإضافة مرة أخرى.",
     }
   }
 };
