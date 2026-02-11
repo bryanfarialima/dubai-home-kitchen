@@ -27,6 +27,18 @@ const AdminPage = () => {
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("orders");
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success(t("logged_out"));
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error(t("logout_failed"));
+    } finally {
+      navigate("/");
+    }
+  };
+
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
       navigate("/");
@@ -52,7 +64,7 @@ const AdminPage = () => {
             <button onClick={() => navigate("/")} className="text-muted-foreground hover:text-primary text-sm flex items-center gap-1">
               <Home className="w-4 h-4" /> Voltar ao Site
             </button>
-            <button onClick={() => { signOut(); navigate("/"); }} className="text-muted-foreground hover:text-accent text-sm flex items-center gap-1">
+            <button onClick={handleSignOut} className="text-muted-foreground hover:text-accent text-sm flex items-center gap-1">
               <LogOut className="w-4 h-4" /> {t("logout")}
             </button>
           </div>

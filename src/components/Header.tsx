@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import LanguageSwitcher from "./LanguageSwitcher";
 
 const Header = () => {
@@ -13,8 +14,15 @@ const Header = () => {
   const { t } = useTranslation();
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate("/");
+    try {
+      await signOut();
+      toast.success(t("logged_out"));
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error(t("logout_failed"));
+    } finally {
+      navigate("/");
+    }
   };
 
   return (

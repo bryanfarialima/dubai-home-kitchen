@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { categories as localCategories, menuItems as localMenuItems } from "@/data/menuData";
-import type { Category } from "@/data/menuData";
 import FoodCard from "./FoodCard";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -52,12 +51,51 @@ const MenuSection = () => {
 
       if (itemsError) throw itemsError;
 
-      setCategories(cats || []);
-      setMenuItems(items || []);
+      const fallbackCategories = localCategories
+        .filter((c) => c.id !== "all")
+        .map((c) => ({
+          id: c.id,
+          name: categoryTranslations[c.id] || c.label,
+          emoji: c.emoji,
+          sort_order: 0,
+        }));
+
+      const fallbackItems = localMenuItems.map((item) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        image_url: item.image,
+        category_id: item.category,
+        badge: item.badge,
+      }));
+
+      setCategories(cats && cats.length > 0 ? cats : fallbackCategories);
+      setMenuItems(items && items.length > 0 ? items : fallbackItems);
     } catch (error) {
       console.error("Error fetching menu:", error);
       // Fallback to local data if database fails
-      setMenuItems(localMenuItems as any);
+      const fallbackCategories = localCategories
+        .filter((c) => c.id !== "all")
+        .map((c) => ({
+          id: c.id,
+          name: categoryTranslations[c.id] || c.label,
+          emoji: c.emoji,
+          sort_order: 0,
+        }));
+
+      const fallbackItems = localMenuItems.map((item) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        image_url: item.image,
+        category_id: item.category,
+        badge: item.badge,
+      }));
+
+      setCategories(fallbackCategories);
+      setMenuItems(fallbackItems);
     } finally {
       setLoading(false);
     }

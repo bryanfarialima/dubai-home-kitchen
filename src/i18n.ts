@@ -143,6 +143,8 @@ const resources = {
       limited_time: "Limited time!",
       no_items_available: "No items available in this category",
       invalid_cart_items: "Your cart had outdated items. Please add items again.",
+      logged_out: "You have been logged out",
+      logout_failed: "Logout failed. Please try again.",
     }
   },
   pt: {
@@ -286,6 +288,8 @@ const resources = {
       limited_time: "Por tempo limitado!",
       no_items_available: "Nenhum item disponível nesta categoria",
       invalid_cart_items: "Seu carrinho tinha itens desatualizados. Adicione novamente.",
+      logged_out: "Voce saiu da conta",
+      logout_failed: "Nao foi possivel sair. Tente novamente.",
     }
   },
   ar: {
@@ -428,6 +432,8 @@ const resources = {
       limited_time: "لفترة محدودة!",
       no_items_available: "لا توجد عناصر متاحة في هذه الفئة",
       invalid_cart_items: "كانت سلة التسوق تحتوي على عناصر قديمة. يرجى الإضافة مرة أخرى.",
+      logged_out: "تم تسجيل الخروج",
+      logout_failed: "تعذر تسجيل الخروج. حاول مرة اخرى.",
     }
   }
 };
