@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Package, UtensilsCrossed, Tag, BarChart3, LogOut } from "lucide-react";
+import { Package, UtensilsCrossed, Tag, BarChart3, LogOut, Home } from "lucide-react";
 import { useAdminOrders } from "@/hooks/useOrders";
 import { useMenuItems } from "@/hooks/useMenuItems";
 import { useCoupons } from "@/hooks/useCoupons";
@@ -48,9 +48,14 @@ const AdminPage = () => {
       <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border">
         <div className="container flex items-center justify-between h-14">
           <h1 className="font-display font-bold text-lg text-foreground">🛠️ {t("admin_panel")}</h1>
-          <button onClick={() => { signOut(); navigate("/"); }} className="text-muted-foreground hover:text-accent text-sm flex items-center gap-1">
-            <LogOut className="w-4 h-4" /> {t("logout")}
-          </button>
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate("/")} className="text-muted-foreground hover:text-primary text-sm flex items-center gap-1">
+              <Home className="w-4 h-4" /> Voltar ao Site
+            </button>
+            <button onClick={() => { signOut(); navigate("/"); }} className="text-muted-foreground hover:text-accent text-sm flex items-center gap-1">
+              <LogOut className="w-4 h-4" /> {t("logout")}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -113,9 +118,8 @@ function AdminOrders() {
               <button
                 key={s}
                 onClick={() => handleStatusChange(order.id, s)}
-                className={`text-xs px-2.5 py-1 rounded-full font-display font-semibold transition-all ${
-                  order.status === s ? statusColors[s] : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
+                className={`text-xs px-2.5 py-1 rounded-full font-display font-semibold transition-all ${order.status === s ? statusColors[s] : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
               >
                 {t(s)}
               </button>
