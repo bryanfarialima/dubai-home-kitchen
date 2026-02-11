@@ -140,6 +140,7 @@ const resources = {
       cash_payment: "Cash payment on delivery",
       processing: "Processing...",
       fill_required_fields: "Fill in all required fields to continue",
+      limited_time: "Limited time!",
     }
   },
   pt: {
@@ -280,6 +281,7 @@ const resources = {
       cash_payment: "Pagamento em dinheiro na entrega",
       processing: "Processando...",
       fill_required_fields: "Preencha todos os campos obrigatórios para continuar",
+      limited_time: "Por tempo limitado!",
     }
   },
   ar: {
@@ -418,7 +420,9 @@ const resources = {
       notes_placeholder: "ملاحظات خاصة (بدون بصل، درجة نضج اللحم، إلخ)",
       cash_payment: "الدفع نقدًا عند التسليم",
       processing: "جارٍ المعالجة...",
-      fill_required_fields: "املأ جميع الحقول المطلوبة للمتابعة",    }
+      fill_required_fields: "املأ جميع الحقول المطلوبة للمتابعة",
+      limited_time: "لفترة محدودة!",
+    }
   }
 };
 

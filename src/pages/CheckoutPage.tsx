@@ -84,7 +84,10 @@ const CheckoutPage = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Order creation error:", error);
+        throw new Error(`Erro ao criar pedido: ${error.message}`);
+      }
 
       // Create order items
       const orderItems = items.map((item) => ({
@@ -95,7 +98,10 @@ const CheckoutPage = () => {
       }));
 
       const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        console.error("Order items error:", itemsError);
+        throw new Error(`Erro ao adicionar itens: ${itemsError.message}`);
+      }
 
       // Clear cart and navigate
       clearCart();
@@ -227,7 +233,9 @@ const CheckoutPage = () => {
           )}
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">{t("delivery_fee")}</span>
-            <span className="text-foreground">AED {deliveryFee.toFixed(2)}</span>
+            <span className="text-success font-semibold">
+              FREE 🎉 <span className="text-xs">{t("limited_time")}</span>
+            </span>
           </div>
           <div className="flex justify-between font-display font-bold text-lg border-t border-border pt-2">
             <span className="text-foreground">{t("total")}</span>

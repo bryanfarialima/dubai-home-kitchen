@@ -12,6 +12,11 @@ const Header = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border">
       <div className="container flex items-center justify-between h-16">
@@ -40,7 +45,7 @@ const Header = () => {
               <button onClick={() => navigate("/orders")} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
                 <User className="w-4 h-4" />
               </button>
-              <button onClick={signOut} className="text-xs text-muted-foreground hover:text-accent font-display">{t("logout")}</button>
+              <button onClick={handleSignOut} className="text-xs text-muted-foreground hover:text-accent font-display">{t("logout")}</button>
             </div>
           ) : (
             <button onClick={() => navigate("/auth")} className="text-sm font-display font-semibold text-primary hover:underline">
