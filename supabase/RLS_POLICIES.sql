@@ -118,11 +118,11 @@ USING (has_role(auth.uid(), 'admin'));
 -- DELIVERY_ZONES - Public read, admin write
 -- =====================================================
 
--- Anyone can view active delivery zones
+-- Anyone can view delivery zones (no is_active column in this table)
 DROP POLICY IF EXISTS "Anyone can view delivery zones" ON delivery_zones;
 CREATE POLICY "Anyone can view delivery zones"
 ON delivery_zones FOR SELECT
-USING (is_active = true OR has_role(auth.uid(), 'admin'));
+USING (true);
 
 -- Admins can manage delivery zones
 DROP POLICY IF EXISTS "Admins can manage delivery zones" ON delivery_zones;
