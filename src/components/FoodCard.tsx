@@ -1,5 +1,6 @@
 import { Plus, Star } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import type { MenuItem } from "@/data/menuData";
 import { useCart } from "@/contexts/CartContext";
 
@@ -10,6 +11,7 @@ interface FoodCardProps {
 
 const FoodCard = ({ item, index }: FoodCardProps) => {
   const { addItem } = useCart();
+  const { t } = useTranslation();
 
   return (
     <motion.div
@@ -43,15 +45,13 @@ const FoodCard = ({ item, index }: FoodCardProps) => {
         <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{item.description}</p>
 
         <div className="flex items-center justify-between">
-          <span className="text-xl font-display font-bold text-primary">
-            AED {item.price}
-          </span>
+          <span className="text-xl font-display font-bold text-primary">AED {item.price}</span>
           <button
             onClick={() => addItem(item)}
             className="flex items-center gap-1.5 bg-primary text-primary-foreground px-4 py-2 rounded-full text-sm font-display font-semibold hover:brightness-110 transition-all active:scale-95"
           >
             <Plus className="w-4 h-4" />
-            Add
+            {t("add")}
           </button>
         </div>
       </div>
