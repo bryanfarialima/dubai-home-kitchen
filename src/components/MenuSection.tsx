@@ -137,6 +137,5 @@ const MenuSection = () => {
     </section>
   );
 };
-};
 
 export default MenuSection;
