@@ -78,6 +78,7 @@ export const useAdminOrders = () => {
             const { data } = await supabase
                 .from("orders")
                 .select("*")
+                .not("status", "in", "(cancelled,delivered)")
                 .order("created_at", { ascending: false });
             setOrders(data || []);
             setLoading(false);
