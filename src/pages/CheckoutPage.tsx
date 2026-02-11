@@ -16,9 +16,10 @@ const CheckoutPage = () => {
   const { items, totalPrice, clearCart } = useCart();
   const { data: zones } = useDeliveryZones();
   const { validateCoupon } = useCoupons();
-  
+
   const [address, setAddress] = useState("");
   const [zoneId, setZoneId] = useState("");
+  const [locationType, setLocationType] = useState("");
   const [couponCode, setCouponCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [notes, setNotes] = useState("");
@@ -44,19 +45,24 @@ const CheckoutPage = () => {
       navigate("/auth");
       return;
     }
-    
+
     if (!address.trim()) {
       toast.error(t("fill_delivery_details"));
       return;
     }
-    
+
     if (!phone.trim()) {
       toast.error("Por favor, informe seu telefone");
       return;
     }
-    
+
+    if (!locationType) {
+      toast.error("Por favor, selecione o tipo de local");
+      return;
+    }
+
     if (!zoneId) {
-      toast.error("Por favor, selecione a zona de entrega");
+      toast.error("Por favor, selecione a área de entrega");
       return;
     }
 
@@ -76,7 +82,7 @@ const CheckoutPage = () => {
           delivery_fee: deliveryFee,
           discount,
           total: finalTotal,
-          delivery_address: `${address} | Tel: ${phone}`,
+          delivery_address: `${locationType} - ${address} | Tel: ${phone}`,
           delivery_zone_id: zoneId,
           payment_method: "cash",
           notes: notes.trim() || null,
@@ -148,7 +154,7 @@ const CheckoutPage = () => {
           <h3 className="font-display font-bold text-foreground flex items-center gap-2">
             <MapPin className="w-4 h-4 text-primary" /> {t("delivery_address")}
           </h3>
-          
+
           <input
             type="tel"
             value={phone}
@@ -156,24 +162,38 @@ const CheckoutPage = () => {
             placeholder="Telefone (ex: +971 50 123 4567)"
             className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
-          
+
+          <select
+            value={locationType}
+            onChange={(e) => setLocationType(e.target.value)}
+            className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="">Selecione o tipo de local para entrega</option>
+            <option value="Casa">🏡 Casa</option>
+            <option value="Apartamento">🏢 Apartamento</option>
+            <option value="Condomínio">🏘️ Condomínio</option>
+            <option value="Villa">🏰 Villa</option>
+            <option value="Escritório">💼 Escritório</option>
+            <option value="Hotel">🏨 Hotel</option>
+          </select>
+
           <textarea
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            placeholder="Endereço completo (rua, número, apartamento, referências)"
+            placeholder="Endereço completo (rua, número, andar, referências)"
             rows={3}
             className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
           />
-          
+
           <select
             value={zoneId}
             onChange={(e) => setZoneId(e.target.value)}
             className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           >
-            <option value="">{t("select_zone")}</option>
+            <option value="">Área de entrega (calcula taxa)</option>
             {zones?.map((z) => (
               <option key={z.id} value={z.id}>
-                {z.name} - AED {z.fee} taxa de entrega
+                {z.name} - Entrega: AED {z.fee}
               </option>
             ))}
           </select>
@@ -203,8 +223,8 @@ const CheckoutPage = () => {
               placeholder="WELCOME10"
               className="flex-1 px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary uppercase"
             />
-            <button 
-              onClick={applyCoupon} 
+            <button
+              onClick={applyCoupon}
               disabled={!couponCode.trim()}
               className="px-4 py-3 bg-primary text-primary-foreground rounded-lg font-display font-semibold text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
@@ -240,13 +260,13 @@ const CheckoutPage = () => {
 
         <button
           onClick={handlePlaceOrder}
-          disabled={loading || !address || !phone || !zoneId}
+          disabled={loading || !address || !phone || !locationType || !zoneId}
           className="w-full bg-primary text-primary-foreground py-4 rounded-full font-display font-bold text-base hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20"
         >
           {loading ? "Processando..." : `${t("place_order")} — AED ${finalTotal.toFixed(2)}`}
         </button>
-        
-        {(!address || !phone || !zoneId) && (
+
+        {(!address || !phone || !locationType || !zoneId) && (
           <p className="text-xs text-center text-muted-foreground">
             Preencha todos os campos obrigatórios para continuar
           </p>
