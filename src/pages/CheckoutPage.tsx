@@ -18,7 +18,6 @@ const CheckoutPage = () => {
   const { validateCoupon } = useCoupons();
 
   const [address, setAddress] = useState("");
-  const [zoneId, setZoneId] = useState("");
   const [locationType, setLocationType] = useState("");
   const [couponCode, setCouponCode] = useState("");
   const [discount, setDiscount] = useState(0);
@@ -26,8 +25,7 @@ const CheckoutPage = () => {
   const [loading, setLoading] = useState(false);
   const [phone, setPhone] = useState("");
 
-  const selectedZone = zones?.find((z) => z.id === zoneId);
-  const deliveryFee = selectedZone?.fee || 0;
+  const deliveryFee = 0; // Free delivery
   const finalTotal = totalPrice - discount + deliveryFee;
 
   const applyCoupon = async () => {
@@ -52,17 +50,12 @@ const CheckoutPage = () => {
     }
 
     if (!phone.trim()) {
-      toast.error("Por favor, informe seu telefone");
+      toast.error(t("phone_required"));
       return;
     }
 
     if (!locationType) {
-      toast.error("Por favor, selecione o tipo de local");
-      return;
-    }
-
-    if (!zoneId) {
-      toast.error("Por favor, selecione a área de entrega");
+      toast.error(t("location_type_required"));
       return;
     }
 
@@ -83,7 +76,7 @@ const CheckoutPage = () => {
           discount,
           total: finalTotal,
           delivery_address: `${locationType} - ${address} | Tel: ${phone}`,
-          delivery_zone_id: zoneId,
+          delivery_zone_id: null,
           payment_method: "cash",
           notes: notes.trim() || null,
           status: "pending",
@@ -159,7 +152,7 @@ const CheckoutPage = () => {
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="Telefone (ex: +971 50 123 4567)"
+            placeholder={t("phone_placeholder")}
             className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
 
@@ -168,35 +161,22 @@ const CheckoutPage = () => {
             onChange={(e) => setLocationType(e.target.value)}
             className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           >
-            <option value="">Selecione o tipo de local para entrega</option>
-            <option value="Casa">🏡 Casa</option>
-            <option value="Apartamento">🏢 Apartamento</option>
-            <option value="Condomínio">🏘️ Condomínio</option>
-            <option value="Villa">🏰 Villa</option>
-            <option value="Escritório">💼 Escritório</option>
-            <option value="Hotel">🏨 Hotel</option>
+            <option value="">{t("select_location_type")}</option>
+            <option value="Casa">🏡 {t("house")}</option>
+            <option value="Apartamento">🏢 {t("apartment")}</option>
+            <option value="Condomínio">🏘️ {t("condo")}</option>
+            <option value="Villa">🏰 {t("villa")}</option>
+            <option value="Escritório">💼 {t("office")}</option>
+            <option value="Hotel">🏨 {t("hotel")}</option>
           </select>
 
           <textarea
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            placeholder="Endereço completo (rua, número, andar, referências)"
+            placeholder={t("address_placeholder")}
             rows={3}
             className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
           />
-
-          <select
-            value={zoneId}
-            onChange={(e) => setZoneId(e.target.value)}
-            className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="">Área de entrega (calcula taxa)</option>
-            {zones?.map((z) => (
-              <option key={z.id} value={z.id}>
-                {z.name} - Entrega: AED {z.fee}
-              </option>
-            ))}
-          </select>
         </div>
 
         {/* Notes */}
@@ -207,7 +187,7 @@ const CheckoutPage = () => {
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Observações especiais (sem cebola, ponto da carne, etc.)"
+            placeholder={t("notes_placeholder")}
             rows={2}
             className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
           />
@@ -254,21 +234,21 @@ const CheckoutPage = () => {
             <span className="text-primary">AED {finalTotal.toFixed(2)}</span>
           </div>
           <p className="text-xs text-muted-foreground text-center pt-2">
-            💵 Pagamento em dinheiro na entrega
+            💵 {t("cash_payment")}
           </p>
         </div>
 
         <button
           onClick={handlePlaceOrder}
-          disabled={loading || !address || !phone || !locationType || !zoneId}
+          disabled={loading || !address || !phone || !locationType}
           className="w-full bg-primary text-primary-foreground py-4 rounded-full font-display font-bold text-base hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20"
         >
-          {loading ? "Processando..." : `${t("place_order")} — AED ${finalTotal.toFixed(2)}`}
+          {loading ? t("processing") : `${t("place_order")} — AED ${finalTotal.toFixed(2)}`}
         </button>
 
-        {(!address || !phone || !locationType || !zoneId) && (
+        {(!address || !phone || !locationType) && (
           <p className="text-xs text-center text-muted-foreground">
-            Preencha todos os campos obrigatórios para continuar
+            {t("fill_required_fields")}
           </p>
         )}
       </div>
