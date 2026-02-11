@@ -1,7 +1,10 @@
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import heroImage from "@/assets/hero-food.jpg";
 
 const HeroSection = () => {
+  const { t } = useTranslation();
+
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-0">
@@ -17,19 +20,19 @@ const HeroSection = () => {
           className="max-w-lg"
         >
           <span className="inline-block bg-primary/90 text-primary-foreground text-xs font-display font-semibold px-3 py-1.5 rounded-full mb-4">
-            🔥 Free delivery on orders over AED 80
+            {t("free_delivery")}
           </span>
           <h2 className="text-4xl sm:text-5xl lg:text-6xl font-display font-black text-primary-foreground leading-tight mb-4">
-            Comida Caseira Brasileira in Dubai
+            {t("hero_title")}
           </h2>
           <p className="text-primary-foreground/80 text-lg mb-6 font-sans">
-            Authentic homemade Brazilian meals delivered to your door. Made with love, just like home. 🇧🇷
+            {t("hero_subtitle")}
           </p>
           <a
             href="#menu"
             className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-display font-bold text-lg px-8 py-4 rounded-full hover:brightness-110 transition-all shadow-lg shadow-primary/30"
           >
-            Order Now 🍽️
+            {t("order_now")}
           </a>
         </motion.div>
       </div>
