@@ -28,15 +28,15 @@
     ],
     "icons": [
         {
-            "src": "/favicon.ico",
+            "src": "/logo-192x192.png",
             "sizes": "192x192",
-            "type": "image/x-icon",
+            "type": "image/png",
             "purpose": "any maskable"
         },
         {
-            "src": "/favicon.ico",
+            "src": "/logo-512x512.png",
             "sizes": "512x512",
-            "type": "image/x-icon",
+            "type": "image/png",
             "purpose": "any maskable"
         }
     ],
@@ -48,9 +48,9 @@
             "url": "/?tab=menu",
             "icons": [
                 {
-                    "src": "/favicon.ico",
+                    "src": "/logo-192x192.png",
                     "sizes": "192x192",
-                    "type": "image/x-icon"
+                    "type": "image/png"
                 }
             ]
         },
@@ -61,9 +61,9 @@
             "url": "/orders",
             "icons": [
                 {
-                    "src": "/favicon.ico",
+                    "src": "/logo-192x192.png",
                     "sizes": "192x192",
-                    "type": "image/x-icon"
+                    "type": "image/png"
                 }
             ]
         }
