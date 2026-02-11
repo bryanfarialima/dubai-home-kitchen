@@ -67,11 +67,11 @@ const OrdersPage = () => {
 
       <div className="container py-6 max-w-lg space-y-4">
         {loading ? (
-          <div className="text-center text-muted-foreground py-12">Loading...</div>
+          <div className="text-center text-muted-foreground py-12">{t("loading")}</div>
         ) : orders.length === 0 ? (
           <div className="text-center py-12 space-y-3">
             <Package className="w-12 h-12 text-muted-foreground mx-auto" />
-            <p className="text-muted-foreground font-display">No orders yet</p>
+            <p className="text-muted-foreground font-display">{t("no_orders")}</p>
             <button onClick={() => navigate("/")} className="text-primary font-display font-semibold">{t("back_to_menu")}</button>
           </div>
         ) : (
@@ -87,7 +87,7 @@ const OrdersPage = () => {
                 </span>
               </div>
               <div className="flex justify-between items-center border-t border-border pt-2">
-                <span className="text-sm text-muted-foreground">{order.payment_method === "cash" ? "💵" : "💳"} {order.payment_method}</span>
+                <span className="text-sm text-muted-foreground">{order.payment_method === "cash" ? "💵" : "💳"} {t(order.payment_method || "cash")}</span>
                 <span className="font-display font-bold text-primary">AED {Number(order.total).toFixed(2)}</span>
               </div>
             </div>

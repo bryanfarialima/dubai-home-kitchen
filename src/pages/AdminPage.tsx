@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Package, UtensilsCrossed, Tag, BarChart3, LogOut, ChevronRight } from "lucide-react";
 
@@ -19,6 +20,7 @@ const statusColors: Record<string, string> = {
 
 const AdminPage = () => {
   const { user, isAdmin, signOut, loading: authLoading } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("orders");
 
@@ -32,19 +34,19 @@ const AdminPage = () => {
   if (!isAdmin) return null;
 
   const tabs = [
-    { id: "orders" as Tab, label: "Orders", icon: Package },
-    { id: "menu" as Tab, label: "Menu", icon: UtensilsCrossed },
-    { id: "coupons" as Tab, label: "Coupons", icon: Tag },
-    { id: "reports" as Tab, label: "Reports", icon: BarChart3 },
+    { id: "orders" as Tab, label: t("orders"), icon: Package },
+    { id: "menu" as Tab, label: t("menu_management"), icon: UtensilsCrossed },
+    { id: "coupons" as Tab, label: t("coupons_mgmt"), icon: Tag },
+    { id: "reports" as Tab, label: t("reports"), icon: BarChart3 },
   ];
 
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border">
         <div className="container flex items-center justify-between h-14">
-          <h1 className="font-display font-bold text-lg text-foreground">🛠️ Admin Panel</h1>
+          <h1 className="font-display font-bold text-lg text-foreground">🛠️ {t("admin_panel")}</h1>
           <button onClick={() => { signOut(); navigate("/"); }} className="text-muted-foreground hover:text-accent text-sm flex items-center gap-1">
-            <LogOut className="w-4 h-4" /> Logout
+            <LogOut className="w-4 h-4" /> {t("logout")}
           </button>
         </div>
       </header>
@@ -56,9 +58,8 @@ const AdminPage = () => {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-display font-semibold whitespace-nowrap transition-all ${
-                tab === t.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
-              }`}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-display font-semibold whitespace-nowrap transition-all ${tab === t.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                }`}
             >
               <t.icon className="w-4 h-4" /> {t.label}
             </button>
@@ -79,6 +80,7 @@ const AdminPage = () => {
 function AdminOrders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   const fetchOrders = async () => {
     const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
@@ -97,14 +99,14 @@ function AdminOrders() {
 
   const updateStatus = async (orderId: string, status: string) => {
     await supabase.from("orders").update({ status }).eq("id", orderId);
-    toast.success(`Order updated to ${status}`);
+    toast.success(`${t("orders")}: ${status}`);
   };
 
-  if (loading) return <p className="text-muted-foreground text-center py-8">Loading orders...</p>;
+  if (loading) return <p className="text-muted-foreground text-center py-8">{t("listing_categories")}...</p>;
 
   return (
     <div className="space-y-4 max-w-2xl">
-      <h2 className="font-display font-bold text-xl text-foreground">Live Orders ({orders.length})</h2>
+      <h2 className="font-display font-bold text-xl text-foreground">{t("live_orders")} ({orders.length})</h2>
       {orders.map((order) => (
         <div key={order.id} className="bg-card rounded-xl border border-border p-4 space-y-3">
           <div className="flex justify-between items-start">
@@ -120,9 +122,8 @@ function AdminOrders() {
               <button
                 key={s}
                 onClick={() => updateStatus(order.id, s)}
-                className={`text-xs px-2.5 py-1 rounded-full font-display font-semibold transition-all ${
-                  order.status === s ? statusColors[s] : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
+                className={`text-xs px-2.5 py-1 rounded-full font-display font-semibold transition-all ${order.status === s ? statusColors[s] : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
               >
                 {s}
               </button>
@@ -143,6 +144,7 @@ function AdminMenu() {
   const [categoryId, setCategoryId] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   const fetchData = async () => {
     const [{ data: mi }, { data: cats }] = await Promise.all([
@@ -156,14 +158,14 @@ function AdminMenu() {
   useEffect(() => { fetchData(); }, []);
 
   const handleSave = async () => {
-    if (!name || !price) { toast.error("Name and price required"); return; }
+    if (!name || !price) { toast.error(t("error_occurred")); return; }
     const payload = { name, description, price: parseFloat(price), category_id: categoryId || null, image_url: imageUrl || null };
     if (editId) {
       await supabase.from("menu_items").update(payload).eq("id", editId);
-      toast.success("Item updated");
+      toast.success(t("updated_success"));
     } else {
       await supabase.from("menu_items").insert(payload);
-      toast.success("Item added");
+      toast.success(t("item_added"));
     }
     resetForm();
     fetchData();
@@ -187,27 +189,27 @@ function AdminMenu() {
 
   const deleteItem = async (id: string) => {
     await supabase.from("menu_items").delete().eq("id", id);
-    toast.success("Item deleted");
+    toast.success(t("deleted_success"));
     fetchData();
   };
 
   return (
     <div className="space-y-6 max-w-2xl">
       <div className="bg-card rounded-xl border border-border p-4 space-y-3">
-        <h3 className="font-display font-bold text-foreground">{editId ? "Edit Item" : "Add Item"}</h3>
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Dish name" className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
-        <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description" className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+        <h3 className="font-display font-bold text-foreground">{editId ? t("edit_item") : t("add_item")}</h3>
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("dish_name")} className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+        <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("description")} className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
         <div className="flex gap-3">
-          <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Price (AED)" type="number" className="flex-1 px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+          <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder={t("price_aed")} type="number" className="flex-1 px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
           <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="flex-1 px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-            <option value="">Category</option>
+            <option value="">{t("category")}</option>
             {categories.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}
           </select>
         </div>
-        <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Image URL" className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+        <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder={t("image_url")} className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
         <div className="flex gap-2">
-          <button onClick={handleSave} className="bg-primary text-primary-foreground px-6 py-3 rounded-full font-display font-bold text-sm">{editId ? "Update" : "Add"}</button>
-          {editId && <button onClick={resetForm} className="text-muted-foreground font-display text-sm">Cancel</button>}
+          <button onClick={handleSave} className="bg-primary text-primary-foreground px-6 py-3 rounded-full font-display font-bold text-sm">{editId ? t("update") : t("add")}</button>
+          {editId && <button onClick={resetForm} className="text-muted-foreground font-display text-sm">{t("cancel")}</button>}
         </div>
       </div>
 
@@ -220,10 +222,10 @@ function AdminMenu() {
               <p className="text-xs text-muted-foreground">AED {Number(item.price).toFixed(2)}</p>
             </div>
             <button onClick={() => toggleAvailability(item.id, item.is_available)} className={`text-xs px-2 py-1 rounded-full font-display font-semibold ${item.is_available ? "bg-success/20 text-success" : "bg-muted text-muted-foreground"}`}>
-              {item.is_available ? "Active" : "Off"}
+              {item.is_available ? t("active") : t("off")}
             </button>
-            <button onClick={() => startEdit(item)} className="text-xs text-primary font-display">Edit</button>
-            <button onClick={() => deleteItem(item.id)} className="text-xs text-accent font-display">Del</button>
+            <button onClick={() => startEdit(item)} className="text-xs text-primary font-display">{t("edit")}</button>
+            <button onClick={() => deleteItem(item.id)} className="text-xs text-accent font-display">{t("delete")}</button>
           </div>
         ))}
       </div>
@@ -237,6 +239,7 @@ function AdminCoupons() {
   const [discountType, setDiscountType] = useState("percentage");
   const [discountValue, setDiscountValue] = useState("");
   const [minOrder, setMinOrder] = useState("");
+  const { t } = useTranslation();
 
   const fetchCoupons = async () => {
     const { data } = await supabase.from("coupons").select("*").order("created_at", { ascending: false });
@@ -253,7 +256,7 @@ function AdminCoupons() {
       discount_value: parseFloat(discountValue),
       min_order: minOrder ? parseFloat(minOrder) : 0,
     });
-    toast.success("Coupon created");
+    toast.success(t("coupon_created"));
     setCode(""); setDiscountValue(""); setMinOrder("");
     fetchCoupons();
   };
@@ -266,27 +269,27 @@ function AdminCoupons() {
   return (
     <div className="space-y-6 max-w-lg">
       <div className="bg-card rounded-xl border border-border p-4 space-y-3">
-        <h3 className="font-display font-bold text-foreground">Create Coupon</h3>
-        <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Code (e.g. SAVE20)" className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+        <h3 className="font-display font-bold text-foreground">{t("create_coupon")}</h3>
+        <input value={code} onChange={(e) => setCode(e.target.value)} placeholder={t("coupon_code_label")} className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
         <div className="flex gap-3">
           <select value={discountType} onChange={(e) => setDiscountType(e.target.value)} className="flex-1 px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm">
-            <option value="percentage">% Percentage</option>
-            <option value="fixed">AED Fixed</option>
+            <option value="percentage">{t("percentage")}</option>
+            <option value="fixed">{t("fixed_aed")}</option>
           </select>
-          <input value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} placeholder="Value" type="number" className="flex-1 px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+          <input value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} placeholder={t("value")} type="number" className="flex-1 px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
         </div>
-        <input value={minOrder} onChange={(e) => setMinOrder(e.target.value)} placeholder="Min order (AED)" type="number" className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
-        <button onClick={addCoupon} className="bg-primary text-primary-foreground px-6 py-3 rounded-full font-display font-bold text-sm">Create</button>
+        <input value={minOrder} onChange={(e) => setMinOrder(e.target.value)} placeholder={t("min_order_aed")} type="number" className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+        <button onClick={addCoupon} className="bg-primary text-primary-foreground px-6 py-3 rounded-full font-display font-bold text-sm">{t("create")}</button>
       </div>
       <div className="space-y-2">
         {coupons.map((c) => (
           <div key={c.id} className="bg-card rounded-xl border border-border p-3 flex items-center justify-between">
             <div>
               <p className="font-display font-bold text-sm text-foreground">{c.code}</p>
-              <p className="text-xs text-muted-foreground">{c.discount_type === "percentage" ? `${c.discount_value}%` : `AED ${c.discount_value}`} off{c.min_order > 0 ? ` (min AED ${c.min_order})` : ""}</p>
+              <p className="text-xs text-muted-foreground">{c.discount_type === "percentage" ? `${c.discount_value}%` : `AED ${c.discount_value}`} {t("off")}{c.min_order > 0 ? ` ({t("min")} AED ${c.min_order})` : ""}</p>
             </div>
             <button onClick={() => toggleCoupon(c.id, c.is_active)} className={`text-xs px-2.5 py-1 rounded-full font-display font-semibold ${c.is_active ? "bg-success/20 text-success" : "bg-muted text-muted-foreground"}`}>
-              {c.is_active ? "Active" : "Inactive"}
+              {c.is_active ? t("active") : t("inactive")}
             </button>
           </div>
         ))}
@@ -297,6 +300,7 @@ function AdminCoupons() {
 
 function AdminReports() {
   const [stats, setStats] = useState({ totalOrders: 0, totalRevenue: 0, todayOrders: 0, todayRevenue: 0 });
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -317,15 +321,15 @@ function AdminReports() {
   }, []);
 
   const cards = [
-    { label: "Today's Orders", value: stats.todayOrders, icon: "📦" },
-    { label: "Today's Revenue", value: `AED ${stats.todayRevenue.toFixed(2)}`, icon: "💰" },
-    { label: "Total Orders", value: stats.totalOrders, icon: "📊" },
-    { label: "Total Revenue", value: `AED ${stats.totalRevenue.toFixed(2)}`, icon: "🏦" },
+    { label: t("todays_orders"), value: stats.todayOrders, icon: "📦" },
+    { label: t("todays_revenue"), value: `AED ${stats.todayRevenue.toFixed(2)}`, icon: "💰" },
+    { label: t("total_orders"), value: stats.totalOrders, icon: "📊" },
+    { label: t("total_revenue"), value: `AED ${stats.totalRevenue.toFixed(2)}`, icon: "🏦" },
   ];
 
   return (
     <div className="max-w-2xl">
-      <h2 className="font-display font-bold text-xl text-foreground mb-4">Reports</h2>
+      <h2 className="font-display font-bold text-xl text-foreground mb-4">{t("reports")}</h2>
       <div className="grid grid-cols-2 gap-4">
         {cards.map((c) => (
           <div key={c.label} className="bg-card rounded-xl border border-border p-4 text-center">

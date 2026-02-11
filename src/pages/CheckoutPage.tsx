@@ -44,23 +44,23 @@ const CheckoutPage = () => {
       .maybeSingle();
 
     if (!data) {
-      toast.error("Invalid coupon code");
+      toast.error(t("error_occurred"));
       return;
     }
     if (data.min_order && totalPrice < data.min_order) {
-      toast.error(`Minimum order AED ${data.min_order} required`);
+      toast.error(`${t("min_order_aed")} ${data.min_order}`);
       return;
     }
     const disc = data.discount_type === "percentage"
       ? (totalPrice * data.discount_value) / 100
       : data.discount_value;
     setDiscount(disc);
-    toast.success(`Coupon applied! -AED ${disc.toFixed(2)}`);
+    toast.success(`${t("coupon_applied")}! -AED ${disc.toFixed(2)}`);
   };
 
   const handlePlaceOrder = async () => {
     if (!user) { navigate("/auth"); return; }
-    if (!address || !zoneId) { toast.error("Please fill delivery details"); return; }
+    if (!address || !zoneId) { toast.error(t("fill_delivery_details")); return; }
     if (items.length === 0) return;
 
     setLoading(true);
@@ -124,7 +124,7 @@ const CheckoutPage = () => {
       <div className="container py-6 max-w-lg space-y-6">
         {/* Order Summary */}
         <div className="bg-card rounded-xl border border-border p-4 space-y-3">
-          <h3 className="font-display font-bold text-foreground">Order Summary</h3>
+          <h3 className="font-display font-bold text-foreground">{t("your_cart")}</h3>
           {items.map((item) => (
             <div key={item.id} className="flex justify-between text-sm">
               <span className="text-foreground">{item.quantity}x {item.name}</span>
@@ -172,17 +172,15 @@ const CheckoutPage = () => {
           <div className="flex gap-3">
             <button
               onClick={() => setPaymentMethod("card")}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border text-sm font-display font-semibold transition-all ${
-                paymentMethod === "card" ? "border-primary bg-primary/10 text-primary" : "border-input text-muted-foreground"
-              }`}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border text-sm font-display font-semibold transition-all ${paymentMethod === "card" ? "border-primary bg-primary/10 text-primary" : "border-input text-muted-foreground"
+                }`}
             >
               <CreditCard className="w-4 h-4" /> {t("card")}
             </button>
             <button
               onClick={() => setPaymentMethod("cash")}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border text-sm font-display font-semibold transition-all ${
-                paymentMethod === "cash" ? "border-primary bg-primary/10 text-primary" : "border-input text-muted-foreground"
-              }`}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border text-sm font-display font-semibold transition-all ${paymentMethod === "cash" ? "border-primary bg-primary/10 text-primary" : "border-input text-muted-foreground"
+                }`}
             >
               <Banknote className="w-4 h-4" /> {t("cash")}
             </button>
@@ -219,7 +217,7 @@ const CheckoutPage = () => {
         {/* Totals */}
         <div className="bg-card rounded-xl border border-border p-4 space-y-2">
           <div className="flex justify-between text-sm"><span className="text-muted-foreground">{t("subtotal")}</span><span className="text-foreground">AED {totalPrice.toFixed(2)}</span></div>
-          {discount > 0 && <div className="flex justify-between text-sm"><span className="text-success">Discount</span><span className="text-success">-AED {discount.toFixed(2)}</span></div>}
+          {discount > 0 && <div className="flex justify-between text-sm"><span className="text-success">{t("discount")}</span><span className="text-success">-AED {discount.toFixed(2)}</span></div>}
           <div className="flex justify-between text-sm"><span className="text-muted-foreground">{t("delivery_fee")}</span><span className="text-foreground">AED {deliveryFee.toFixed(2)}</span></div>
           <div className="flex justify-between font-display font-bold text-lg border-t border-border pt-2">
             <span className="text-foreground">{t("total")}</span>

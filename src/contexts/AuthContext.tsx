@@ -20,9 +20,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const checkAdmin = async (userId: string) => {
-    const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
-    setIsAdmin(!!data);
+  const checkAdmin = async (userId: string, userMetadata?: any) => {
+    try {
+      // First, check user_metadata.role (set by promotion script)
+      if (userMetadata?.role === 'admin') {
+        setIsAdmin(true);
+        return;
+      }
+
+      // Fallback: check via RPC if table exists
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+        const { data, error } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+        clearTimeout(timeoutId);
+        if (error) {
+          console.warn('RPC has_role error (table may not exist):', error.message);
+          setIsAdmin(false);
+          return;
+        }
+        setIsAdmin(!!data);
+      } catch (rpcError) {
+        console.warn('RPC call failed or timed out:', rpcError);
+        setIsAdmin(false);
+      }
+    } catch (err) {
+      console.error('Error in checkAdmin:', err);
+      setIsAdmin(false);
+    }
   };
 
   useEffect(() => {
@@ -30,18 +55,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        await checkAdmin(session.user.id);
+        await checkAdmin(session.user.id, session.user.user_metadata);
       } else {
         setIsAdmin(false);
       }
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        checkAdmin(session.user.id);
+        await checkAdmin(session.user.id, session.user.user_metadata);
+      } else {
+        setIsAdmin(false);
       }
       setLoading(false);
     });
