@@ -57,16 +57,28 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,woff,woff2,ttf,eot,svg}"],
+        globPatterns: ["**/*.{js,css,html}"],
+        globIgnores: ["**/*.map", "**/node_modules/**/*"],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/ldjjyqrjckxdpewxxrnb\.supabase\.co\/.*/i,
+            urlPattern: /^https:\/\/ldjjyqrjckxdpewxxrnb\.supabase\.co\/auth\/.*/i,
             handler: "NetworkFirst",
             options: {
-              cacheName: "supabase-api-cache",
+              cacheName: "supabase-auth",
               expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 7, // 1 week
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 5, // 5 minutes for auth
+              },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/ldjjyqrjckxdpewxxrnb\.supabase\.co\/rest\/.*/i,
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "supabase-api",
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 60 * 60, // 1 hour for API
               },
             },
           },
@@ -74,7 +86,10 @@ export default defineConfig(({ mode }) => ({
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: "CacheFirst",
             options: {
-              cacheName: "google-fonts-cache",
+              cacheName: "google-fonts",
+              expiration: {
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+              },
             },
           },
         ],
@@ -85,5 +100,20 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'supabase-vendor': ['@supabase/supabase-js'],
+          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-slot', '@radix-ui/react-scroll-area', '@radix-ui/react-toast', '@radix-ui/react-tooltip'],
+          'query-vendor': ['@tanstack/react-query'],
+          'utils-vendor': ['lucide-react', 'sonner', 'framer-motion'],
+          'i18n-vendor': ['i18next', 'react-i18next'],
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000,
   },
 }));
