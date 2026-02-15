@@ -17,7 +17,7 @@ const CheckoutPage = () => {
   const { items, totalPrice, clearCart } = useCart();
   const { data: zones } = useDeliveryZones();
   const { validateCoupon } = useCoupons();
-  const { profile } = useProfile(user?.id);
+  const { profile, loading: profileLoading } = useProfile(user?.id);
 
   const [address, setAddress] = useState("");
   const [locationType, setLocationType] = useState("");
@@ -26,6 +26,7 @@ const CheckoutPage = () => {
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [phone, setPhone] = useState("");
+  const hasRequiredProfile = Boolean(profile?.phone?.trim()) && Boolean(profile?.address?.trim());
 
   // Pre-fill with profile data
   useEffect(() => {
@@ -55,6 +56,12 @@ const CheckoutPage = () => {
     if (!user) {
       toast.error(t("not_logged_in"));
       navigate("/auth");
+      return;
+    }
+
+    if (!hasRequiredProfile) {
+      toast.error(t("complete_profile_to_checkout"));
+      navigate("/profile");
       return;
     }
 
@@ -146,6 +153,31 @@ const CheckoutPage = () => {
     );
   }
 
+  if (profileLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">{t("loading")}</p>
+      </div>
+    );
+  }
+
+  if (!hasRequiredProfile) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 p-6 text-center">
+        <div className="bg-card rounded-xl border border-border p-6 max-w-md w-full">
+          <h2 className="font-display text-lg font-bold text-foreground mb-2">{t("profile_required_checkout")}</h2>
+          <p className="text-sm text-muted-foreground mb-4">{t("complete_profile_to_checkout")}</p>
+          <button
+            onClick={() => navigate("/profile")}
+            className="w-full px-4 py-3 rounded-lg bg-primary text-primary-foreground font-semibold"
+          >
+            {t("go_to_profile")}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border">
@@ -178,14 +210,14 @@ const CheckoutPage = () => {
           <input
             type="tel"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            readOnly
             placeholder={t("phone_placeholder")}
             className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
 
           <select
             value={locationType}
-            onChange={(e) => setLocationType(e.target.value)}
+            disabled
             className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="">{t("select_location_type")}</option>
@@ -199,11 +231,19 @@ const CheckoutPage = () => {
 
           <textarea
             value={address}
-            onChange={(e) => setAddress(e.target.value)}
+            readOnly
             placeholder={t("address_placeholder")}
             rows={3}
             className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
           />
+
+          <button
+            type="button"
+            onClick={() => navigate("/profile")}
+            className="w-full px-4 py-3 rounded-lg border border-primary text-primary font-semibold hover:bg-primary/10"
+          >
+            {t("edit_address")}
+          </button>
         </div>
 
         {/* Notes */}

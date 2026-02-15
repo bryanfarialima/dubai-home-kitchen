@@ -33,7 +33,14 @@ export const useProfile = (userId?: string) => {
         .eq("user_id", userId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // No profile row yet, treat as empty profile
+        if (error.code === "PGRST116") {
+          setProfile(null);
+          return;
+        }
+        throw error;
+      }
       setProfile(data as UserProfile);
     } catch (error: any) {
       console.error("Error fetching profile:", error);
