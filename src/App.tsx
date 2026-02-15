@@ -7,6 +7,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import InstallPrompt from "@/components/InstallPrompt";
+import NotificationPrompt from "@/components/NotificationPrompt";
 import "@/i18n";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
@@ -39,6 +40,7 @@ const App = () => (
             </Routes>
             <WhatsAppButton />
             <InstallPrompt />
+            <NotificationPrompt />
           </BrowserRouter>
         </CartProvider>
       </AuthProvider>

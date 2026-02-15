@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "react-i18next";
 
 interface Order {
     id: string;
@@ -18,6 +19,8 @@ export const useOrders = (userId?: string) => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const { t } = useTranslation();
+    const previousOrdersRef = useRef<Order[]>([]);
 
     useEffect(() => {
         if (!userId) {
@@ -35,6 +38,19 @@ export const useOrders = (userId?: string) => {
                     .order("created_at", { ascending: false });
 
                 if (fetchError) throw fetchError;
+                
+                // Check for status changes and send notifications
+                if (previousOrdersRef.current.length > 0 && data) {
+                    data.forEach((newOrder) => {
+                        const oldOrder = previousOrdersRef.current.find(o => o.id === newOrder.id);
+                        if (oldOrder && oldOrder.status !== newOrder.status) {
+                            // Status changed, send notification
+                            sendOrderNotification(newOrder.id, newOrder.status, t);
+                        }
+                    });
+                }
+                
+                previousOrdersRef.current = data || [];
                 setOrders(data || []);
                 setError(null);
             } catch (err: any) {
@@ -64,9 +80,70 @@ export const useOrders = (userId?: string) => {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [userId]);
+    }, [userId, t]);
 
     return { orders, loading, error };
+};
+
+const sendOrderNotification = (orderId: string, status: string, t: any) => {
+    if (!("Notification" in window) || Notification.permission !== "granted") {
+        return;
+    }
+
+    const statusMessages: Record<string, { title: string; body: string; emoji: string }> = {
+        confirmed: {
+            emoji: "✅",
+            title: t("order_confirmed"),
+            body: t("order_confirmed_message"),
+        },
+        preparing: {
+            emoji: "👨‍🍳",
+            title: t("order_preparing"),
+            body: t("order_preparing_message"),
+        },
+        delivering: {
+            emoji: "🚗",
+            title: t("order_delivering"),
+            body: t("order_delivering_message"),
+        },
+        delivered: {
+            emoji: "🎉",
+            title: t("order_delivered"),
+            body: t("order_delivered_message"),
+        },
+        cancelled: {
+            emoji: "❌",
+            title: t("order_cancelled"),
+            body: t("order_cancelled_message"),
+        },
+    };
+
+    const config = statusMessages[status];
+    if (!config) return;
+
+    try {
+        if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.ready.then((registration) => {
+              registration.showNotification(`${config.emoji} ${config.title}`, {
+                body: config.body,
+                icon: "/favicon.ico",
+                badge: "/favicon.ico",
+                tag: `order-${orderId}`,
+                requireInteraction: status === "delivered",
+                vibrate: [200, 100, 200],
+                data: { orderId, status },
+              });
+            });
+        } else {
+            new Notification(`${config.emoji} ${config.title}`, {
+              body: config.body,
+              icon: "/favicon.ico",
+              tag: `order-${orderId}`,
+            });
+        }
+    } catch (error) {
+        console.error("Error sending notification:", error);
+    }
 };
 
 export const useAdminOrders = () => {

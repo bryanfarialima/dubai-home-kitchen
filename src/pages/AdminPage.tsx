@@ -3,14 +3,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Package, UtensilsCrossed, Tag, BarChart3, LogOut, Home } from "lucide-react";
+import { Package, UtensilsCrossed, Tag, BarChart3, LogOut, Home, Bell } from "lucide-react";
 import { useAdminOrders } from "@/hooks/useOrders";
 import { useMenuItems } from "@/hooks/useMenuItems";
 import { useCoupons } from "@/hooks/useCoupons";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
-type Tab = "orders" | "menu" | "coupons" | "reports";
+type Tab = "orders" | "menu" | "coupons" | "reports" | "notifications";
 
 const statusOptions = ["pending", "confirmed", "preparing", "delivering", "delivered", "cancelled"];
 const statusColors: Record<string, string> = {
@@ -54,6 +54,7 @@ const AdminPage = () => {
     { id: "menu" as Tab, label: t("menu_management"), icon: UtensilsCrossed },
     { id: "coupons" as Tab, label: t("coupons_mgmt"), icon: Tag },
     { id: "reports" as Tab, label: t("reports"), icon: BarChart3 },
+    { id: "notifications" as Tab, label: t("notifications"), icon: Bell },
   ];
 
   return (
@@ -93,6 +94,7 @@ const AdminPage = () => {
         {tab === "menu" && <AdminMenu />}
         {tab === "coupons" && <AdminCoupons />}
         {tab === "reports" && <AdminReports />}
+        {tab === "notifications" && <AdminNotifications />}
       </div>
     </div>
   );
@@ -601,6 +603,160 @@ function AdminReports() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdminNotifications() {
+  const [title, setTitle] = useState("");
+  const [message, setMessage] = useState("");
+  const [type, setType] = useState<"promotion" | "menu">("promotion");
+  const [sending, setSending] = useState(false);
+  const { t } = useTranslation();
+
+  const sendBroadcastNotification = () => {
+    if (!title || !message) {
+      toast.error(t("fill_all_fields"));
+      return;
+    }
+
+    setSending(true);
+
+    try {
+      // In a real implementation, this would send to all users via push service
+      // For now, we'll show it to the admin as a demo
+      if ("Notification" in window && Notification.permission === "granted") {
+        const emoji = type === "promotion" ? "🎉" : "🍽️";
+        
+        if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.ready.then((registration) => {
+            registration.showNotification(`${emoji} ${title}`, {
+              body: message,
+              icon: "/favicon.ico",
+              badge: "/favicon.ico",
+              vibrate: [200, 100, 200],
+              tag: `broadcast-${type}-${Date.now()}`,
+              requireInteraction: true,
+              data: { type, title, message },
+            });
+          });
+        } else {
+          new Notification(`${emoji} ${title}`, {
+            body: message,
+            icon: "/favicon.ico",
+            tag: `broadcast-${type}`,
+          });
+        }
+        
+        toast.success(t("notification_sent"));
+        setTitle("");
+        setMessage("");
+      } else {
+        toast.error(t("notifications_not_enabled"));
+      }
+    } catch (error) {
+      console.error("Error sending notification:", error);
+      toast.error(t("error_occurred"));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 max-w-xl">
+      <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl border border-primary/20 p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+            <Bell className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h2 className="font-display font-bold text-xl text-foreground">{t("send_notification")}</h2>
+            <p className="text-sm text-muted-foreground">{t("broadcast_to_all_users")}</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-display font-semibold text-foreground mb-2 block">
+              {t("notification_type")}
+            </label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setType("promotion")}
+                className={`flex-1 px-4 py-3 rounded-lg text-sm font-display font-semibold transition-all ${
+                  type === "promotion"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-background border border-border text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                🎉 {t("promotion")}
+              </button>
+              <button
+                onClick={() => setType("menu")}
+                className={`flex-1 px-4 py-3 rounded-lg text-sm font-display font-semibold transition-all ${
+                  type === "menu"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-background border border-border text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                🍽️ {t("menu_update")}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-display font-semibold text-foreground mb-2 block">
+              {t("title")}
+            </label>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={type === "promotion" ? t("promo_title_example") : t("menu_title_example")}
+              className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              maxLength={50}
+            />
+            <p className="text-xs text-muted-foreground mt-1">{title.length}/50</p>
+          </div>
+
+          <div>
+            <label className="text-sm font-display font-semibold text-foreground mb-2 block">
+              {t("message")}
+            </label>
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder={type === "promotion" ? t("promo_message_example") : t("menu_message_example")}
+              className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[100px] resize-none"
+              maxLength={150}
+            />
+            <p className="text-xs text-muted-foreground mt-1">{message.length}/150</p>
+          </div>
+
+          <button
+            onClick={sendBroadcastNotification}
+            disabled={sending || !title || !message}
+            className="w-full bg-primary text-primary-foreground px-6 py-4 rounded-full font-display font-bold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {sending ? (
+              <>
+                <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                {t("sending")}...
+              </>
+            ) : (
+              <>
+                <Bell className="w-4 h-4" />
+                {t("send_to_all")}
+              </>
+            )}
+          </button>
+        </div>
+
+        <div className="mt-6 p-4 bg-warning/10 border border-warning/20 rounded-lg">
+          <p className="text-xs text-muted-foreground">
+            ⚠️ {t("notification_disclaimer")}
+          </p>
         </div>
       </div>
     </div>
