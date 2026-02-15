@@ -8,14 +8,7 @@ const HeroSection = () => {
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-0">
-        <img
-          src={heroImage}
-          alt="Brazilian homemade food"
-          className="w-full h-full object-cover"
-          loading="eager"
-          decoding="async"
-          fetchPriority="high"
-        />
+        <img src={heroImage} alt="Brazilian homemade food" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/50 to-foreground/20" />
       </div>
 
