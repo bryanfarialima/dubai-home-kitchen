@@ -54,6 +54,16 @@ const ProfilePage = () => {
     }
   }, [profile]);
 
+  const getMaxLength = (areaCode: string): number => {
+    switch (areaCode) {
+      case "+971": return 9;  // UAE: 9 digits
+      case "+55": return 11;  // Brazil: 11 digits max
+      case "+1": return 10;   // USA/Canada: 10 digits
+      case "+44": return 11;  // UK: 11 digits max
+      default: return 15;      // Generic: up to 15 digits
+    }
+  };
+
   const validatePhone = (number: string, areaCode: string): { valid: boolean; message?: string } => {
     // Remove spaces and special chars
     const cleaned = number.replace(/[\s-]/g, "");
@@ -196,7 +206,7 @@ const ProfilePage = () => {
             <div>
               <label className="text-sm font-medium text-foreground block mb-2 flex items-center gap-2">
                 <Phone className="w-4 h-4 text-primary" />
-                {t("phone")}
+                {t("phone_label")}
               </label>
               <div className="flex gap-2">
                 <select
@@ -218,7 +228,7 @@ const ProfilePage = () => {
                   }}
                   className="flex-1 px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder={t("phone_number_placeholder")}
-                  maxLength={9}
+                  maxLength={getMaxLength(areaCode)}
                 />
               </div>
               <p className="text-xs text-muted-foreground mt-1">
