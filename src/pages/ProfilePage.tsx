@@ -54,11 +54,49 @@ const ProfilePage = () => {
     }
   }, [profile]);
 
-  const validatePhone = (number: string): boolean => {
+  const validatePhone = (number: string, areaCode: string): { valid: boolean; message?: string } => {
     // Remove spaces and special chars
     const cleaned = number.replace(/[\s-]/g, "");
-    // UAE phone: 9 digits (50/52/54/55/56/58 + 7 digits)
-    return /^(50|52|54|55|56|58)\d{7}$/.test(cleaned);
+    
+    if (!cleaned) return { valid: true }; // Empty is valid (optional field)
+    
+    switch (areaCode) {
+      case "+971": // UAE
+        const isValidUAE = /^(50|52|54|55|56|58)\d{7}$/.test(cleaned);
+        return { 
+          valid: isValidUAE, 
+          message: isValidUAE ? undefined : "UAE: 50/52/54/55/56/58 + 7 digits" 
+        };
+      
+      case "+55": // Brazil
+        const isValidBR = /^\d{10,11}$/.test(cleaned); // DDD + 8 or 9 digits
+        return { 
+          valid: isValidBR, 
+          message: isValidBR ? undefined : "Brazil: 10-11 digits (DDD + number)" 
+        };
+      
+      case "+1": // USA/Canada
+        const isValidUS = /^\d{10}$/.test(cleaned); // Area code + 7 digits
+        return { 
+          valid: isValidUS, 
+          message: isValidUS ? undefined : "USA/Canada: 10 digits" 
+        };
+      
+      case "+44": // UK
+        const isValidUK = /^\d{10,11}$/.test(cleaned);
+        return { 
+          valid: isValidUK, 
+          message: isValidUK ? undefined : "UK: 10-11 digits" 
+        };
+      
+      default:
+        // For other country codes, just check if it's numeric and reasonable length
+        const isValidGeneric = /^\d{7,15}$/.test(cleaned);
+        return { 
+          valid: isValidGeneric, 
+          message: isValidGeneric ? undefined : "7-15 digits required" 
+        };
+    }
   };
 
   const validateAddress = (): boolean => {
@@ -74,9 +112,12 @@ const ProfilePage = () => {
     }
 
     // Validate phone if provided
-    if (phoneNumber && !validatePhone(phoneNumber)) {
-      toast.error(t("invalid_phone"));
-      return;
+    if (phoneNumber) {
+      const phoneValidation = validatePhone(phoneNumber, areaCode);
+      if (!phoneValidation.valid) {
+        toast.error(`${t("invalid_phone")}: ${phoneValidation.message}`);
+        return;
+      }
     }
 
     // Validate address if provided

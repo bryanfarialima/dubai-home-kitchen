@@ -58,9 +58,19 @@ export const useProfile = (userId?: string) => {
       if (error) throw error;
 
       toast.success(t("updated_success"));
-      await fetchProfile();
+      
+      // Refetch profile after a small delay to prevent abort errors
+      setTimeout(() => {
+        fetchProfile();
+      }, 100);
+      
       return { success: true };
     } catch (error: any) {
+      // Handle abort errors gracefully
+      if (error.name === "AbortError") {
+        console.log("Request was aborted, but update may have succeeded");
+        return { success: true };
+      }
       toast.error(error.message || t("error_occurred"));
       return { success: false, error };
     }
