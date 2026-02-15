@@ -5,18 +5,26 @@ import { fileURLToPath } from 'url';
 import https from 'https';
 import http from 'http';
 import sharp from 'sharp';
+import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Load environment variables from .env file
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
+
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('Error: Missing Supabase credentials');
-  console.error('Make sure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set');
+  console.error('Make sure VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set');
+  console.error('Available vars:', Object.keys(process.env).filter(k => k.includes('SUPABASE')));
   process.exit(1);
 }
+
+console.log('Using Supabase URL:', supabaseUrl);
+console.log('Using key type:', supabaseKey.startsWith('sb_') ? 'Publishable' : 'Service Role');
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
