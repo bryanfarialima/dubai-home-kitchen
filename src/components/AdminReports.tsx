@@ -1,55 +1,10 @@
-import { useState, useEffect, Suspense, lazy } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
-import { Skeleton } from "@/components/ui/skeleton";
-
-// Lazy load chart components only when this component renders
-const DynamicLineChart = lazy(() => import("recharts").then(mod => {
-  const { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Line } = mod;
-  return {
-    default: ({ data }: any) => (
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-          <XAxis dataKey="date" stroke="#888" />
-          <YAxis stroke="#888" />
-          <Tooltip 
-            contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}
-            labelStyle={{ color: '#fff' }}
-          />
-          <Line type="monotone" dataKey="revenue" stroke="#ff6b6b" strokeWidth={2} dot={{ fill: '#ff6b6b' }} />
-        </LineChart>
-      </ResponsiveContainer>
-    )
-  };
-}));
-
-const DynamicBarChart = lazy(() => import("recharts").then(mod => {
-  const { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar } = mod;
-  return {
-    default: ({ data }: any) => (
-      <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-          <XAxis dataKey="hour" stroke="#888" />
-          <YAxis stroke="#888" />
-          <Tooltip 
-            contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}
-            labelStyle={{ color: '#fff' }}
-          />
-          <Bar dataKey="orders" fill="#4ecdc4" />
-        </BarChart>
-      </ResponsiveContainer>
-    )
-  };
-}));
-
-const ChartLoader = () => <Skeleton className="h-64 w-full rounded-lg" />;
 
 export default function AdminReports() {
   const [stats, setStats] = useState({ totalOrders: 0, totalRevenue: 0, todayOrders: 0, todayRevenue: 0 });
   const [period, setPeriod] = useState<"7d" | "30d" | "all">("7d");
-  const [salesChart, setSalesChart] = useState<any[]>([]);
   const [topDishes, setTopDishes] = useState<any[]>([]);
   const [peakHours, setPeakHours] = useState<any[]>([]);
   const [zoneStats, setZoneStats] = useState<any[]>([]);
@@ -78,30 +33,6 @@ export default function AdminReports() {
       todayOrders: todayOrders.length,
       todayRevenue: todayOrders.reduce((s, o) => s + Number(o.total), 0),
     });
-
-    // Sales chart data
-    const days = period === "7d" ? 7 : period === "30d" ? 30 : 90;
-    const dateMap: Record<string, number> = {};
-    
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split("T")[0];
-      dateMap[dateStr] = 0;
-    }
-
-    allOrders.forEach(order => {
-      const orderDate = order.created_at.split("T")[0];
-      if (dateMap.hasOwnProperty(orderDate)) {
-        dateMap[orderDate] += Number(order.total);
-      }
-    });
-
-    const chartData = Object.entries(dateMap).map(([date, revenue]) => ({
-      date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      revenue: Number(revenue.toFixed(2))
-    }));
-    setSalesChart(chartData);
 
     // Top dishes
     const { data: orderItems } = await supabase
@@ -203,20 +134,14 @@ export default function AdminReports() {
         ))}
       </div>
 
-      {/* Sales chart */}
+      {/* Top dishes */}
       <div className="bg-card rounded-xl border border-border p-6">
-        <h3 className="font-display font-bold text-foreground mb-4">📈 {t("sales_trend")}</h3>
-        <Suspense fallback={<ChartLoader />}>
-          <DynamicLineChart data={salesChart} />
-        </Suspense>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Top dishes */}
-        <div className="bg-card rounded-xl border border-border p-6">
-          <h3 className="font-display font-bold text-foreground mb-4">🍽️ {t("top_dishes")}</h3>
-          <div className="space-y-3">
-            {topDishes.map((dish, idx) => (
+        <h3 className="font-display font-bold text-foreground mb-4">🍽️ {t("top_dishes")}</h3>
+        <div className="space-y-3">
+          {topDishes.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("no_data")}</p>
+          ) : (
+            topDishes.map((dish, idx) => (
               <div key={dish.name} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center">{idx + 1}</span>
@@ -224,16 +149,31 @@ export default function AdminReports() {
                 </div>
                 <span className="text-sm font-display font-bold text-muted-foreground">{dish.quantity}x</span>
               </div>
-            ))}
-          </div>
+            ))
+          )}
         </div>
+      </div>
 
-        {/* Peak hours */}
-        <div className="bg-card rounded-xl border border-border p-6">
-          <h3 className="font-display font-bold text-foreground mb-4">⏰ {t("peak_hours")}</h3>
-          <Suspense fallback={<ChartLoader />}>
-            <DynamicBarChart data={peakHours} />
-          </Suspense>
+      {/* Peak hours */}
+      <div className="bg-card rounded-xl border border-border p-6">
+        <h3 className="font-display font-bold text-foreground mb-4">⏰ {t("peak_hours")}</h3>
+        <div className="space-y-2">
+          {peakHours.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("no_data")}</p>
+          ) : (
+            peakHours.map(h => (
+              <div key={h.hour} className="flex items-center justify-between p-2 bg-background rounded">
+                <span className="text-sm text-foreground">{h.hour}</span>
+                <div className="flex items-center gap-2 flex-1 ml-4">
+                  <div 
+                    className="h-6 bg-primary/60 rounded"
+                    style={{ width: `${(h.orders / 10) * 100}%` }}
+                  />
+                  <span className="text-xs text-muted-foreground">{h.orders}</span>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -241,21 +181,25 @@ export default function AdminReports() {
       <div className="bg-card rounded-xl border border-border p-6">
         <h3 className="font-display font-bold text-foreground mb-4">🗺️ {t("zone_performance")}</h3>
         <div className="space-y-3">
-          {zoneStats.map((zone, idx) => (
-            <div key={zone.name} className="flex items-center justify-between p-3 bg-background rounded-lg">
-              <div className="flex items-center gap-3">
-                <div 
-                  className="w-3 h-3 rounded-full" 
-                  style={{ backgroundColor: COLORS[idx % COLORS.length] }}
-                />
-                <span className="text-sm font-display font-semibold text-foreground">{zone.name}</span>
+          {zoneStats.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("no_data")}</p>
+          ) : (
+            zoneStats.map((zone, idx) => (
+              <div key={zone.name} className="flex items-center justify-between p-3 bg-background rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: COLORS[idx % COLORS.length] }}
+                  />
+                  <span className="text-sm font-display font-semibold text-foreground">{zone.name}</span>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-display font-bold text-primary">AED {zone.revenue.toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground">{zone.orders} {t("orders")}</p>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm font-display font-bold text-primary">AED {zone.revenue.toFixed(2)}</p>
-                <p className="text-xs text-muted-foreground">{zone.orders} {t("orders")}</p>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>

@@ -105,15 +105,10 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'supabase-vendor': ['@supabase/supabase-js'],
-          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-slot', '@radix-ui/react-scroll-area', '@radix-ui/react-toast', '@radix-ui/react-tooltip'],
-          'query-vendor': ['@tanstack/react-query'],
-          'utils-vendor': ['lucide-react', 'sonner', 'framer-motion'],
-          'i18n-vendor': ['i18next', 'react-i18next'],
+          'vendor': ['react', 'react-dom', 'react-router-dom', '@tanstack/react-query', '@supabase/supabase-js'],
         }
       }
     },
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 600,
   },
 }));
