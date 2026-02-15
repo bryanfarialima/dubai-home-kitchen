@@ -22,19 +22,19 @@ ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
 CREATE POLICY "Users can view own profile"
 ON profiles FOR SELECT
-USING (auth.uid() = id);
+USING (auth.uid() = user_id);
 
 -- Users can update their own profile
 DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
 CREATE POLICY "Users can update own profile"
 ON profiles FOR UPDATE
-USING (auth.uid() = id);
+USING (auth.uid() = user_id);
 
--- System can insert profiles (via trigger)
+-- Users can insert their own profile
 DROP POLICY IF EXISTS "System can insert profiles" ON profiles;
-CREATE POLICY "System can insert profiles"
+CREATE POLICY "Users can insert own profile"
 ON profiles FOR INSERT
-WITH CHECK (true);
+WITH CHECK (auth.uid() = user_id);
 
 -- =====================================================
 -- USER_ROLES - Only admins can manage roles

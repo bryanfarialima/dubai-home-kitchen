@@ -221,12 +221,12 @@ const CheckoutPage = () => {
             className="w-full px-4 py-3 rounded-lg border border-input bg-muted/50 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary cursor-not-allowed"
           >
             <option value="">{t("select_location_type")}</option>
-            <option value="Casa">🏡 {t("house")}</option>
-            <option value="Apartamento">🏢 {t("apartment")}</option>
-            <option value="Condomínio">🏘️ {t("condo")}</option>
-            <option value="Villa">🏰 {t("villa")}</option>
-            <option value="Escritório">💼 {t("office")}</option>
-            <option value="Hotel">🏨 {t("hotel")}</option>
+            <option value="house">🏡 {t("house")}</option>
+            <option value="apartment">🏢 {t("apartment")}</option>
+            <option value="condo">🏘️ {t("condo")}</option>
+            <option value="villa">🏰 {t("villa")}</option>
+            <option value="office">💼 {t("office")}</option>
+            <option value="hotel">🏨 {t("hotel")}</option>
           </select>
 
           <textarea
