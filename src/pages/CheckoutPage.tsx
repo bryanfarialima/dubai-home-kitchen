@@ -212,13 +212,13 @@ const CheckoutPage = () => {
             value={phone}
             readOnly
             placeholder={t("phone_placeholder")}
-            className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-4 py-3 rounded-lg border border-input bg-muted/50 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary cursor-not-allowed"
           />
 
           <select
             value={locationType}
             disabled
-            className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-4 py-3 rounded-lg border border-input bg-muted/50 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary cursor-not-allowed"
           >
             <option value="">{t("select_location_type")}</option>
             <option value="Casa">🏡 {t("house")}</option>
@@ -234,7 +234,7 @@ const CheckoutPage = () => {
             readOnly
             placeholder={t("address_placeholder")}
             rows={3}
-            className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+            className="w-full px-4 py-3 rounded-lg border border-input bg-muted/50 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none cursor-not-allowed"
           />
 
           <button
@@ -242,7 +242,7 @@ const CheckoutPage = () => {
             onClick={() => navigate("/profile")}
             className="w-full px-4 py-3 rounded-lg border border-primary text-primary font-semibold hover:bg-primary/10"
           >
-            {t("edit_address")}
+            {t("edit_profile")}
           </button>
         </div>
 
