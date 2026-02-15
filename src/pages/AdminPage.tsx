@@ -8,6 +8,7 @@ import { useAdminOrders } from "@/hooks/useOrders";
 import { useMenuItems } from "@/hooks/useMenuItems";
 import { useCoupons } from "@/hooks/useCoupons";
 import { supabase } from "@/integrations/supabase/client";
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 type Tab = "orders" | "menu" | "coupons" | "reports";
 
@@ -247,6 +248,8 @@ function AdminCoupons() {
   const [discountType, setDiscountType] = useState("percentage");
   const [discountValue, setDiscountValue] = useState("");
   const [minOrder, setMinOrder] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
   const { t } = useTranslation();
 
   const fetchCoupons = async () => {
@@ -256,17 +259,47 @@ function AdminCoupons() {
 
   useEffect(() => { fetchCoupons(); }, []);
 
-  const addCoupon = async () => {
-    if (!code || !discountValue) return;
-    await supabase.from("coupons").insert({
+  const saveCoupon = async () => {
+    if (!code || !discountValue) {
+      toast.error(t("error_occurred"));
+      return;
+    }
+    
+    const payload = {
       code: code.toUpperCase(),
       discount_type: discountType,
       discount_value: parseFloat(discountValue),
       min_order: minOrder ? parseFloat(minOrder) : 0,
-    });
-    toast.success(t("coupon_created"));
-    setCode(""); setDiscountValue(""); setMinOrder("");
+      expires_at: expiresAt || null,
+    };
+
+    if (editId) {
+      await supabase.from("coupons").update(payload).eq("id", editId);
+      toast.success(t("updated_success"));
+    } else {
+      await supabase.from("coupons").insert(payload);
+      toast.success(t("coupon_created"));
+    }
+    
+    resetForm();
     fetchCoupons();
+  };
+
+  const resetForm = () => {
+    setCode("");
+    setDiscountValue("");
+    setMinOrder("");
+    setExpiresAt("");
+    setEditId(null);
+  };
+
+  const startEdit = (coupon: any) => {
+    setEditId(coupon.id);
+    setCode(coupon.code);
+    setDiscountType(coupon.discount_type);
+    setDiscountValue(String(coupon.discount_value));
+    setMinOrder(coupon.min_order ? String(coupon.min_order) : "");
+    setExpiresAt(coupon.expires_at ? coupon.expires_at.split('T')[0] : "");
   };
 
   const toggleCoupon = async (id: string, active: boolean) => {
@@ -274,33 +307,67 @@ function AdminCoupons() {
     fetchCoupons();
   };
 
+  const deleteCoupon = async (id: string) => {
+    if (!confirm(t("confirm_delete"))) return;
+    await supabase.from("coupons").delete().eq("id", id);
+    toast.success(t("deleted_success"));
+    fetchCoupons();
+  };
+
   return (
     <div className="space-y-6 max-w-lg">
       <div className="bg-card rounded-xl border border-border p-4 space-y-3">
-        <h3 className="font-display font-bold text-foreground">{t("create_coupon")}</h3>
-        <input value={code} onChange={(e) => setCode(e.target.value)} placeholder={t("coupon_code_label")} className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+        <h3 className="font-display font-bold text-foreground">{editId ? t("edit_coupon") : t("create_coupon")}</h3>
+        <input value={code} onChange={(e) => setCode(e.target.value)} placeholder={t("coupon_code_label")} className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm uppercase focus:outline-none focus:ring-2 focus:ring-primary" />
         <div className="flex gap-3">
           <select value={discountType} onChange={(e) => setDiscountType(e.target.value)} className="flex-1 px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm">
             <option value="percentage">{t("percentage")}</option>
             <option value="fixed">{t("fixed_aed")}</option>
           </select>
-          <input value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} placeholder={t("value")} type="number" className="flex-1 px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+          <input value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} placeholder={t("value")} type="number" step="0.01" className="flex-1 px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
         </div>
-        <input value={minOrder} onChange={(e) => setMinOrder(e.target.value)} placeholder={t("min_order_aed")} type="number" className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
-        <button onClick={addCoupon} className="bg-primary text-primary-foreground px-6 py-3 rounded-full font-display font-bold text-sm">{t("create")}</button>
+        <input value={minOrder} onChange={(e) => setMinOrder(e.target.value)} placeholder={t("min_order_aed")} type="number" step="0.01" className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">{t("expiry_date")}</label>
+          <input value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} type="date" className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+        </div>
+        <div className="flex gap-2">
+          <button onClick={saveCoupon} className="bg-primary text-primary-foreground px-6 py-3 rounded-full font-display font-bold text-sm">{editId ? t("update") : t("create")}</button>
+          {editId && <button onClick={resetForm} className="text-muted-foreground font-display text-sm hover:text-foreground">{t("cancel")}</button>}
+        </div>
       </div>
       <div className="space-y-2">
-        {coupons.map((c) => (
-          <div key={c.id} className="bg-card rounded-xl border border-border p-3 flex items-center justify-between">
-            <div>
-              <p className="font-display font-bold text-sm text-foreground">{c.code}</p>
-              <p className="text-xs text-muted-foreground">{c.discount_type === "percentage" ? `${c.discount_value}%` : `AED ${c.discount_value}`} {t("off")}{c.min_order > 0 ? ` ({t("min")} AED ${c.min_order})` : ""}</p>
+        {coupons.map((c) => {
+          const isExpired = c.expires_at && new Date(c.expires_at) < new Date();
+          return (
+            <div key={c.id} className="bg-card rounded-xl border border-border p-3">
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex-1">
+                  <p className="font-display font-bold text-sm text-foreground">{c.code}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {c.discount_type === "percentage" ? `${c.discount_value}%` : `AED ${c.discount_value}`} {t("off")}
+                    {c.min_order > 0 ? ` (${t("min")} AED ${c.min_order})` : ""}
+                  </p>
+                  {c.expires_at && (
+                    <p className={`text-xs mt-1 ${isExpired ? "text-accent font-semibold" : "text-muted-foreground"}`}>
+                      {isExpired ? "⚠️ " : "📅 "}{t("expires")}: {new Date(c.expires_at).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+                <button 
+                  onClick={() => toggleCoupon(c.id, c.is_active)} 
+                  className={`text-xs px-2.5 py-1 rounded-full font-display font-semibold ${c.is_active && !isExpired ? "bg-success/20 text-success" : "bg-muted text-muted-foreground"}`}
+                >
+                  {c.is_active && !isExpired ? t("active") : t("inactive")}
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => startEdit(c)} className="text-xs text-primary font-display hover:underline">{t("edit")}</button>
+                <button onClick={() => deleteCoupon(c.id)} className="text-xs text-accent font-display hover:underline">{t("delete")}</button>
+              </div>
             </div>
-            <button onClick={() => toggleCoupon(c.id, c.is_active)} className={`text-xs px-2.5 py-1 rounded-full font-display font-semibold ${c.is_active ? "bg-success/20 text-success" : "bg-muted text-muted-foreground"}`}>
-              {c.is_active ? t("active") : t("inactive")}
-            </button>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -308,25 +375,121 @@ function AdminCoupons() {
 
 function AdminReports() {
   const [stats, setStats] = useState({ totalOrders: 0, totalRevenue: 0, todayOrders: 0, todayRevenue: 0 });
+  const [period, setPeriod] = useState<"7d" | "30d" | "all">("7d");
+  const [salesChart, setSalesChart] = useState<any[]>([]);
+  const [topDishes, setTopDishes] = useState<any[]>([]);
+  const [peakHours, setPeakHours] = useState<any[]>([]);
+  const [zoneStats, setZoneStats] = useState<any[]>([]);
   const { t } = useTranslation();
 
+  const COLORS = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dfe6e9'];
+
   useEffect(() => {
-    const fetchStats = async () => {
-      const { data: allOrders } = await supabase.from("orders").select("total, created_at");
-      if (!allOrders) return;
+    fetchAllStats();
+  }, [period]);
 
-      const today = new Date().toISOString().split("T")[0];
-      const todayOrders = allOrders.filter((o) => o.created_at.startsWith(today));
+  const fetchAllStats = async () => {
+    // Basic stats
+    const { data: allOrders } = await supabase
+      .from("orders")
+      .select("id, total, created_at, delivery_zone_id");
+    
+    if (!allOrders) return;
 
-      setStats({
-        totalOrders: allOrders.length,
-        totalRevenue: allOrders.reduce((s, o) => s + Number(o.total), 0),
-        todayOrders: todayOrders.length,
-        todayRevenue: todayOrders.reduce((s, o) => s + Number(o.total), 0),
+    const today = new Date().toISOString().split("T")[0];
+    const todayOrders = allOrders.filter((o) => o.created_at.startsWith(today));
+
+    setStats({
+      totalOrders: allOrders.length,
+      totalRevenue: allOrders.reduce((s, o) => s + Number(o.total), 0),
+      todayOrders: todayOrders.length,
+      todayRevenue: todayOrders.reduce((s, o) => s + Number(o.total), 0),
+    });
+
+    // Sales chart data
+    const days = period === "7d" ? 7 : period === "30d" ? 30 : 90;
+    const dateMap: Record<string, number> = {};
+    
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split("T")[0];
+      dateMap[dateStr] = 0;
+    }
+
+    allOrders.forEach(order => {
+      const orderDate = order.created_at.split("T")[0];
+      if (dateMap.hasOwnProperty(orderDate)) {
+        dateMap[orderDate] += Number(order.total);
+      }
+    });
+
+    const chartData = Object.entries(dateMap).map(([date, revenue]) => ({
+      date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      revenue: Number(revenue.toFixed(2))
+    }));
+    setSalesChart(chartData);
+
+    // Top dishes
+    const { data: orderItems } = await supabase
+      .from("order_items")
+      .select("menu_item_id, quantity, menu_items(name)");
+    
+    if (orderItems) {
+      const dishMap: Record<string, { name: string; quantity: number }> = {};
+      orderItems.forEach((item: any) => {
+        const name = item.menu_items?.name || "Unknown";
+        if (!dishMap[name]) {
+          dishMap[name] = { name, quantity: 0 };
+        }
+        dishMap[name].quantity += item.quantity;
       });
-    };
-    fetchStats();
-  }, []);
+
+      const topDishesData = Object.values(dishMap)
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 5);
+      setTopDishes(topDishesData);
+    }
+
+    // Peak hours
+    const hourMap: Record<number, number> = {};
+    for (let i = 0; i < 24; i++) hourMap[i] = 0;
+
+    allOrders.forEach(order => {
+      const hour = new Date(order.created_at).getHours();
+      hourMap[hour]++;
+    });
+
+    const peakData = Object.entries(hourMap)
+      .map(([hour, count]) => ({
+        hour: `${hour.padStart(2, '0')}:00`,
+        orders: count
+      }))
+      .filter(h => h.orders > 0);
+    setPeakHours(peakData);
+
+    // Zone stats
+    const { data: zones } = await supabase.from("delivery_zones").select("id, name");
+    if (zones) {
+      const zoneMap: Record<string, { name: string; orders: number; revenue: number }> = {};
+      
+      zones.forEach(zone => {
+        zoneMap[zone.id] = { name: zone.name, orders: 0, revenue: 0 };
+      });
+
+      allOrders.forEach(order => {
+        if (order.delivery_zone_id && zoneMap[order.delivery_zone_id]) {
+          zoneMap[order.delivery_zone_id].orders++;
+          zoneMap[order.delivery_zone_id].revenue += Number(order.total);
+        }
+      });
+
+      const zoneData = Object.values(zoneMap)
+        .filter(z => z.orders > 0)
+        .sort((a, b) => b.revenue - a.revenue);
+      setZoneStats(zoneData);
+    }
+  };
 
   const cards = [
     { label: t("todays_orders"), value: stats.todayOrders, icon: "📦" },
@@ -336,9 +499,11 @@ function AdminReports() {
   ];
 
   return (
-    <div className="max-w-2xl">
-      <h2 className="font-display font-bold text-xl text-foreground mb-4">{t("reports")}</h2>
-      <div className="grid grid-cols-2 gap-4">
+    <div className="space-y-6 max-w-6xl">
+      <h2 className="font-display font-bold text-xl text-foreground">{t("reports")}</h2>
+      
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {cards.map((c) => (
           <div key={c.label} className="bg-card rounded-xl border border-border p-4 text-center">
             <span className="text-2xl mb-2 block">{c.icon}</span>
@@ -346,6 +511,97 @@ function AdminReports() {
             <p className="text-xs text-muted-foreground">{c.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Period selector */}
+      <div className="flex gap-2">
+        {[
+          { value: "7d", label: t("last_7_days") },
+          { value: "30d", label: t("last_30_days") },
+          { value: "all", label: t("all_time") }
+        ].map(p => (
+          <button
+            key={p.value}
+            onClick={() => setPeriod(p.value as any)}
+            className={`px-4 py-2 rounded-full text-sm font-display font-semibold ${period === p.value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Sales chart */}
+      <div className="bg-card rounded-xl border border-border p-6">
+        <h3 className="font-display font-bold text-foreground mb-4">📈 {t("sales_trend")}</h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={salesChart}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+            <XAxis dataKey="date" stroke="#888" />
+            <YAxis stroke="#888" />
+            <Tooltip 
+              contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}
+              labelStyle={{ color: '#fff' }}
+            />
+            <Line type="monotone" dataKey="revenue" stroke="#ff6b6b" strokeWidth={2} dot={{ fill: '#ff6b6b' }} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Top dishes */}
+        <div className="bg-card rounded-xl border border-border p-6">
+          <h3 className="font-display font-bold text-foreground mb-4">🍽️ {t("top_dishes")}</h3>
+          <div className="space-y-3">
+            {topDishes.map((dish, idx) => (
+              <div key={dish.name} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center">{idx + 1}</span>
+                  <span className="text-sm text-foreground">{dish.name}</span>
+                </div>
+                <span className="text-sm font-display font-bold text-muted-foreground">{dish.quantity}x</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Peak hours */}
+        <div className="bg-card rounded-xl border border-border p-6">
+          <h3 className="font-display font-bold text-foreground mb-4">⏰ {t("peak_hours")}</h3>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={peakHours}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+              <XAxis dataKey="hour" stroke="#888" />
+              <YAxis stroke="#888" />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}
+                labelStyle={{ color: '#fff' }}
+              />
+              <Bar dataKey="orders" fill="#4ecdc4" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Zone stats */}
+      <div className="bg-card rounded-xl border border-border p-6">
+        <h3 className="font-display font-bold text-foreground mb-4">🗺️ {t("zone_performance")}</h3>
+        <div className="space-y-3">
+          {zoneStats.map((zone, idx) => (
+            <div key={zone.name} className="flex items-center justify-between p-3 bg-background rounded-lg">
+              <div className="flex items-center gap-3">
+                <div 
+                  className="w-3 h-3 rounded-full" 
+                  style={{ backgroundColor: COLORS[idx % COLORS.length] }}
+                />
+                <span className="text-sm font-display font-semibold text-foreground">{zone.name}</span>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-display font-bold text-primary">AED {zone.revenue.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground">{zone.orders} {t("orders")}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
