@@ -35,21 +35,34 @@ const MenuSection = () => {
 
   const fetchData = async () => {
     try {
-      // Fetch categories
-      const { data: cats, error: catsError } = await supabase
-        .from("categories")
-        .select("*")
-        .order("sort_order");
+      setLoading(true);
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Request timeout")), 8000)
+      );
 
-      if (catsError) throw catsError;
+      const fetchPromise = (async () => {
+        // Fetch categories
+        const { data: cats, error: catsError } = await supabase
+          .from("categories")
+          .select("*")
+          .order("sort_order");
 
-      // Fetch menu items
-      const { data: items, error: itemsError } = await supabase
-        .from("menu_items")
-        .select("*")
-        .eq("is_available", true);
+        if (catsError) throw catsError;
 
-      if (itemsError) throw itemsError;
+        // Fetch menu items
+        const { data: items, error: itemsError } = await supabase
+          .from("menu_items")
+          .select("*")
+          .eq("is_available", true);
+
+        if (itemsError) throw itemsError;
+
+        return { cats, items };
+      })();
+
+      const { cats, items } = await Promise.race([fetchPromise, timeoutPromise]) as any;
 
       const fallbackCategories = localCategories
         .filter((c) => c.id !== "all")
