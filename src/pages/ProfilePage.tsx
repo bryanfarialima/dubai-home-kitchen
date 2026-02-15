@@ -144,17 +144,33 @@ const ProfilePage = () => {
       ? [street, building, floor].filter(Boolean).join(" | ")
       : null;
 
-    setLoading(true);
-    const result = await updateProfile({
+    console.log("Starting profile update with data:", {
       full_name: fullName,
       phone: formattedPhone,
       address: formattedAddress,
       location_type: locationType || null,
     });
-    setLoading(false);
 
-    if (result.success) {
-      // Optional: navigate back or show success
+    setLoading(true);
+    try {
+      const result = await updateProfile({
+        full_name: fullName,
+        phone: formattedPhone,
+        address: formattedAddress,
+        location_type: locationType || null,
+      });
+      
+      console.log("Profile update result:", result);
+      
+      if (result.success) {
+        console.log("Profile updated successfully!");
+      } else {
+        console.error("Profile update failed:", result.error);
+      }
+    } catch (error) {
+      console.error("Unexpected error during profile update:", error);
+    } finally {
+      setLoading(false);
     }
   };
 

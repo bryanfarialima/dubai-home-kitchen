@@ -55,7 +55,30 @@ export const useProfile = (userId?: string) => {
         .update(updates)
         .eq("user_id", userId);
 
-      if (error) throw error;
+      if (error) {
+        // If location_type column doesn't exist, retry without it
+        if (error.message?.includes("location_type") && updates.location_type !== undefined) {
+          console.warn("location_type column not found, retrying without it");
+          const { location_type, ...updatesWithoutLocationType } = updates;
+          
+          const { error: retryError } = await supabase
+            .from("profiles")
+            .update(updatesWithoutLocationType)
+            .eq("user_id", userId);
+          
+          if (retryError) throw retryError;
+          
+          toast.success(t("updated_success"));
+          console.info("Profile updated successfully (location_type column pending migration)");
+          
+          setTimeout(() => {
+            fetchProfile();
+          }, 100);
+          
+          return { success: true };
+        }
+        throw error;
+      }
 
       toast.success(t("updated_success"));
       
@@ -71,7 +94,20 @@ export const useProfile = (userId?: string) => {
         console.log("Request was aborted, but update may have succeeded");
         return { success: true };
       }
-      toast.error(error.message || t("error_occurred"));
+      
+      // More user-friendly error messages
+      let errorMessage = error.message || t("error_occurred");
+      
+      if (error.message?.includes("JWT") || error.message?.includes("auth")) {
+        errorMessage = t("session_expired_please_login");
+      } else if (error.message?.includes("network") || error.message?.includes("fetch")) {
+        errorMessage = t("network_error_try_again");
+      } else if (error.code === "PGRST116") {
+        errorMessage = t("profile_not_found");
+      }
+      
+      console.error("Profile update error:", error);
+      toast.error(errorMessage);
       return { success: false, error };
     }
   };
