@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
-import { ArrowLeft, User, MapPin, Phone, Home } from "lucide-react";
+import { ArrowLeft, User, MapPin, Phone, Home, Building2 } from "lucide-react";
 import { toast } from "sonner";
 
 const ProfilePage = () => {
@@ -13,8 +13,11 @@ const ProfilePage = () => {
   const { profile, loading: profileLoading, updateProfile } = useProfile(user?.id);
 
   const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+  const [areaCode, setAreaCode] = useState("+971");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [street, setStreet] = useState("");
+  const [building, setBuilding] = useState("");
+  const [floor, setFloor] = useState("");
   const [locationType, setLocationType] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -27,25 +30,74 @@ const ProfilePage = () => {
   useEffect(() => {
     if (profile) {
       setFullName(profile.full_name || "");
-      setPhone(profile.phone || "");
-      setAddress(profile.address || "");
+      
+      // Parse phone
+      if (profile.phone) {
+        const phoneMatch = profile.phone.match(/^(\+\d{1,4})\s*(.+)$/);
+        if (phoneMatch) {
+          setAreaCode(phoneMatch[1]);
+          setPhoneNumber(phoneMatch[2].replace(/\s/g, ""));
+        } else {
+          setPhoneNumber(profile.phone);
+        }
+      }
+      
+      // Parse address
+      if (profile.address) {
+        const parts = profile.address.split("|").map(p => p.trim());
+        setStreet(parts[0] || "");
+        setBuilding(parts[1] || "");
+        setFloor(parts[2] || "");
+      }
+      
       setLocationType(profile.location_type || "");
     }
   }, [profile]);
+
+  const validatePhone = (number: string): boolean => {
+    // Remove spaces and special chars
+    const cleaned = number.replace(/[\s-]/g, "");
+    // UAE phone: 9 digits (50/52/54/55/56/58 + 7 digits)
+    return /^(50|52|54|55|56|58)\d{7}$/.test(cleaned);
+  };
+
+  const validateAddress = (): boolean => {
+    return street.trim().length >= 5;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!fullName.trim()) {
-      toast.error(t("error_occurred"));
+      toast.error(t("full_name_required"));
       return;
     }
+
+    // Validate phone if provided
+    if (phoneNumber && !validatePhone(phoneNumber)) {
+      toast.error(t("invalid_phone"));
+      return;
+    }
+
+    // Validate address if provided
+    if (street && !validateAddress()) {
+      toast.error(t("invalid_address"));
+      return;
+    }
+
+    // Format phone
+    const formattedPhone = phoneNumber ? `${areaCode} ${phoneNumber}` : null;
+    
+    // Format address
+    const formattedAddress = street 
+      ? [street, building, floor].filter(Boolean).join(" | ")
+      : null;
 
     setLoading(true);
     const result = await updateProfile({
       full_name: fullName,
-      phone: phone || null,
-      address: address || null,
+      phone: formattedPhone,
+      address: formattedAddress,
       location_type: locationType || null,
     });
     setLoading(false);
@@ -105,13 +157,32 @@ const ProfilePage = () => {
                 <Phone className="w-4 h-4 text-primary" />
                 {t("phone")}
               </label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder={t("phone_placeholder")}
-              />
+              <div className="flex gap-2">
+                <select
+                  value={areaCode}
+                  onChange={(e) => setAreaCode(e.target.value)}
+                  className="w-32 px-3 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="+971">+971 🇦🇪</option>
+                  <option value="+55">+55 🇧🇷</option>
+                  <option value="+1">+1 🇺🇸</option>
+                  <option value="+44">+44 🇬🇧</option>
+                </select>
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, "");
+                    setPhoneNumber(value);
+                  }}
+                  className="flex-1 px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder={t("phone_number_placeholder")}
+                  maxLength={9}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {t("phone_format_hint")}
+              </p>
             </div>
 
             {/* Location Type */}
@@ -136,18 +207,45 @@ const ProfilePage = () => {
             </div>
 
             {/* Address */}
-            <div>
-              <label className="text-sm font-medium text-foreground block mb-2 flex items-center gap-2">
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-foreground block flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-primary" />
                 {t("delivery_address")}
               </label>
-              <textarea
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                placeholder={t("address_placeholder")}
-                rows={3}
+              
+              {/* Street */}
+              <input
+                type="text"
+                value={street}
+                onChange={(e) => setStreet(e.target.value)}
+                className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder={t("street_placeholder")}
               />
+              
+              {/* Building & Floor */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <input
+                    type="text"
+                    value={building}
+                    onChange={(e) => setBuilding(e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder={t("building_placeholder")}
+                  />
+                </div>
+                <div>
+                  <input
+                    type="text"
+                    value={floor}
+                    onChange={(e) => setFloor(e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder={t("floor_placeholder")}
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t("address_hint")}
+              </p>
             </div>
 
             {/* Submit Button */}
