@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import type { MenuItem } from "@/data/menuData";
 import { useCart } from "@/contexts/CartContext";
-import { OptimizedImage } from "./OptimizedImage";
 
 interface FoodCardProps {
   item: MenuItem;
@@ -22,12 +21,11 @@ const FoodCard = ({ item, index }: FoodCardProps) => {
       className="group bg-card rounded-xl overflow-hidden shadow-sm border border-border hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
     >
       <div className="relative aspect-[4/3] overflow-hidden">
-        <OptimizedImage
+        <img
           src={item.image}
           alt={item.name}
-          width={400}
-          quality={75}
-          className="w-full h-full group-hover:scale-105 transition-transform duration-500"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          loading="lazy"
         />
         {item.badge && (
           <span className="absolute top-3 left-3 bg-accent text-accent-foreground text-xs font-display font-bold px-2.5 py-1 rounded-full">
