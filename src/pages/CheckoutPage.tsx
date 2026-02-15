@@ -19,23 +19,14 @@ const CheckoutPage = () => {
   const { validateCoupon } = useCoupons();
   const { profile, loading: profileLoading } = useProfile(user?.id);
 
-  const [address, setAddress] = useState("");
-  const [locationType, setLocationType] = useState("");
   const [couponCode, setCouponCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
-  const [phone, setPhone] = useState("");
-  const hasRequiredProfile = Boolean(profile?.phone?.trim()) && Boolean(profile?.address?.trim());
-
-  // Pre-fill with profile data
-  useEffect(() => {
-    if (profile) {
-      setPhone(profile.phone || "");
-      setAddress(profile.address || "");
-      setLocationType(profile.location_type || "");
-    }
-  }, [profile]);
+  const profilePhone = profile?.phone?.trim() || "";
+  const profileAddress = profile?.address?.trim() || "";
+  const profileLocationType = profile?.location_type?.trim() || "";
+  const hasRequiredProfile = Boolean(profilePhone) && Boolean(profileAddress);
 
   const deliveryFee = 0; // Free delivery
   const finalTotal = totalPrice - discount + deliveryFee;
@@ -65,17 +56,17 @@ const CheckoutPage = () => {
       return;
     }
 
-    if (!address.trim()) {
+    if (!profileAddress) {
       toast.error(t("fill_delivery_details"));
       return;
     }
 
-    if (!phone.trim()) {
+    if (!profilePhone) {
       toast.error(t("phone_required"));
       return;
     }
 
-    if (!locationType) {
+    if (!profileLocationType) {
       toast.error(t("location_type_required"));
       return;
     }
@@ -103,7 +94,7 @@ const CheckoutPage = () => {
           delivery_fee: deliveryFee,
           discount,
           total: finalTotal,
-          delivery_address: `${locationType} - ${address} | Tel: ${phone}`,
+          delivery_address: `${profileLocationType} - ${profileAddress} | Tel: ${profilePhone}`,
           delivery_zone_id: null,
           payment_method: "cash",
           notes: notes.trim() || null,
@@ -209,14 +200,14 @@ const CheckoutPage = () => {
 
           <input
             type="tel"
-            value={phone}
+            value={profilePhone}
             readOnly
             placeholder={t("phone_placeholder")}
             className="w-full px-4 py-3 rounded-lg border border-input bg-muted/50 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary cursor-not-allowed"
           />
 
           <select
-            value={locationType}
+            value={profileLocationType}
             disabled
             className="w-full px-4 py-3 rounded-lg border border-input bg-muted/50 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary cursor-not-allowed"
           >
@@ -230,7 +221,7 @@ const CheckoutPage = () => {
           </select>
 
           <textarea
-            value={address}
+            value={profileAddress}
             readOnly
             placeholder={t("address_placeholder")}
             rows={3}
