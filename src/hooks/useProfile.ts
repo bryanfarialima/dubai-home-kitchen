@@ -59,8 +59,7 @@ export const useProfile = (userId?: string) => {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update(updates)
-        .eq("user_id", userId);
+        .upsert({ user_id: userId, ...updates }, { onConflict: "user_id" });
 
       if (error) {
         // If location_type column doesn't exist, retry without it
@@ -70,8 +69,10 @@ export const useProfile = (userId?: string) => {
           
           const { error: retryError } = await supabase
             .from("profiles")
-            .update(updatesWithoutLocationType)
-            .eq("user_id", userId);
+            .upsert(
+              { user_id: userId, ...updatesWithoutLocationType },
+              { onConflict: "user_id" }
+            );
           
           if (retryError) throw retryError;
           
