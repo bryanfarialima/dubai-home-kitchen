@@ -26,7 +26,7 @@ const Footer = () => {
           <div className="space-y-3">
             <h4 className="font-display font-bold text-background">{t("follow_us")}</h4>
             <div className="flex gap-3">
-              <a href="#" className="text-sm hover:text-primary transition-colors">Instagram</a>
+              <a href="https://www.instagram.com/sabordecasatemperodemae" target="_blank" rel="noopener noreferrer" className="text-sm hover:text-primary transition-colors">Instagram</a>
               <a href="#" className="text-sm hover:text-primary transition-colors">Facebook</a>
               <a href="#" className="text-sm hover:text-primary transition-colors">TikTok</a>
             </div>
