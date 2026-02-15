@@ -55,7 +55,6 @@ export const useNotifications = () => {
           registration.showNotification(title, {
             icon: "/favicon.ico",
             badge: "/favicon.ico",
-            vibrate: [200, 100, 200],
             ...options,
           });
         });
@@ -97,10 +96,6 @@ export const useNotifications = () => {
       tag: "promotion",
       requireInteraction: true,
       data: { type: "promotion", url },
-      actions: url ? [
-        { action: "view", title: "View Offer" },
-        { action: "close", title: "Close" },
-      ] : undefined,
     });
   };
 

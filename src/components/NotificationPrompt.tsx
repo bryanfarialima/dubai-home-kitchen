@@ -7,13 +7,13 @@ const NotificationPrompt = () => {
   const { t } = useTranslation();
   const { permission, isSupported, requestPermission } = useNotifications();
   const [isVisible, setIsVisible] = useState(false);
-  const [isDismissed, setIsDismissed] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   useEffect(() => {
-    // Check if user already dismissed or granted permission
+    // Check if user already interacted
     const dismissed = localStorage.getItem("notification-prompt-dismissed");
     
-    if (dismissed === "true" || !isSupported || permission === "granted" || permission === "denied") {
+    if (dismissed === "true" || !isSupported || permission === "granted" || permission === "denied" || hasInteracted) {
       return;
     }
 
@@ -23,9 +23,10 @@ const NotificationPrompt = () => {
     }, 10000);
 
     return () => clearTimeout(timer);
-  }, [isSupported, permission]);
+  }, [isSupported, permission, hasInteracted]);
 
   const handleEnable = async () => {
+    setHasInteracted(true);
     const granted = await requestPermission();
     if (granted) {
       setIsVisible(false);
@@ -34,8 +35,8 @@ const NotificationPrompt = () => {
   };
 
   const handleDismiss = () => {
+    setHasInteracted(true);
     setIsVisible(false);
-    setIsDismissed(true);
     localStorage.setItem("notification-prompt-dismissed", "true");
   };
 
@@ -44,12 +45,12 @@ const NotificationPrompt = () => {
     // Don't mark as permanently dismissed, will show again next session
   };
 
-  if (!isVisible || isDismissed) {
+  if (!isVisible || hasInteracted) {
     return null;
   }
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50 animate-in slide-in-from-bottom-4">
+    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-40 animate-in slide-in-from-bottom-4 pointer-events-auto">
       <div className="bg-card border border-border rounded-2xl shadow-2xl p-5 relative">
         <button
           onClick={handleDismiss}

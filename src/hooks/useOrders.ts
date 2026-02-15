@@ -130,7 +130,6 @@ const sendOrderNotification = (orderId: string, status: string, t: any) => {
                 badge: "/favicon.ico",
                 tag: `order-${orderId}`,
                 requireInteraction: status === "delivered",
-                vibrate: [200, 100, 200],
                 data: { orderId, status },
               });
             });
