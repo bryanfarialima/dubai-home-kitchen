@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft, MapPin, MessageSquare } from "lucide-react";
@@ -16,6 +17,7 @@ const CheckoutPage = () => {
   const { items, totalPrice, clearCart } = useCart();
   const { data: zones } = useDeliveryZones();
   const { validateCoupon } = useCoupons();
+  const { profile } = useProfile(user?.id);
 
   const [address, setAddress] = useState("");
   const [locationType, setLocationType] = useState("");
@@ -24,6 +26,15 @@ const CheckoutPage = () => {
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [phone, setPhone] = useState("");
+
+  // Pre-fill with profile data
+  useEffect(() => {
+    if (profile) {
+      setPhone(profile.phone || "");
+      setAddress(profile.address || "");
+      setLocationType(profile.location_type || "");
+    }
+  }, [profile]);
 
   const deliveryFee = 0; // Free delivery
   const finalTotal = totalPrice - discount + deliveryFee;

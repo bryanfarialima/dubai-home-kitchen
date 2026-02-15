@@ -1,10 +1,11 @@
-import { ShoppingCart, MapPin, User, Shield } from "lucide-react";
+import { ShoppingCart, MapPin, User, Shield, ChevronDown } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { useState } from "react";
 import LanguageSwitcher from "./LanguageSwitcher";
 
 const Header = () => {
@@ -12,6 +13,7 @@ const Header = () => {
   const { user, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -50,10 +52,58 @@ const Header = () => {
                   <Shield className="w-4 h-4" />
                 </button>
               )}
-              <button onClick={() => navigate("/orders")} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
-                <User className="w-4 h-4" />
-              </button>
-              <button onClick={handleSignOut} className="text-xs text-muted-foreground hover:text-accent font-display">{t("logout")}</button>
+              
+              {/* User Dropdown Menu */}
+              <div className="relative">
+                <button 
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-1 p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
+                >
+                  <User className="w-4 h-4" />
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+                
+                {showUserMenu && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setShowUserMenu(false)}
+                    />
+                    <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg z-50 py-1">
+                      <button
+                        onClick={() => {
+                          navigate("/profile");
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors flex items-center gap-2"
+                      >
+                        <User className="w-4 h-4" />
+                        {t("my_profile")}
+                      </button>
+                      <button
+                        onClick={() => {
+                          navigate("/orders");
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors flex items-center gap-2"
+                      >
+                        <ShoppingCart className="w-4 h-4" />
+                        {t("my_orders")}
+                      </button>
+                      <div className="border-t border-border my-1" />
+                      <button
+                        onClick={() => {
+                          handleSignOut();
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-accent hover:bg-muted transition-colors"
+                      >
+                        {t("logout")}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           ) : (
             <button onClick={() => navigate("/auth")} className="text-sm font-display font-semibold text-primary hover:underline">
