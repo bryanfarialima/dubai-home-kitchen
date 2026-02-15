@@ -14,6 +14,14 @@ const AuthPage = () => {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const getAuthErrorMessage = (err: any) => {
+    const rawMessage = (err?.message || "").toLowerCase();
+    if (rawMessage.includes("rate limit") || rawMessage.includes("too many")) {
+      return t("email_rate_limit");
+    }
+    return err?.message || t("error_occurred");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -21,15 +29,15 @@ const AuthPage = () => {
       if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) throw error;
-        toast.success("Welcome back!");
+        toast.success(t("welcome_back"));
         navigate("/");
       } else {
         const { error } = await signUp(email, password, fullName);
         if (error) throw error;
-        toast.success("Account created! Please check your email to verify.");
+        toast.success(t("account_created"));
       }
     } catch (err: any) {
-      toast.error(err.message || "An error occurred");
+      toast.error(getAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
