@@ -330,7 +330,6 @@ This project is private and proprietary.
 
 ## 🙏 Acknowledgments
 
-- Built with [Lovable.dev](https://lovable.dev)
 - UI components from [ShadCN](https://ui.shadcn.com)
 - Icons from [Lucide](https://lucide.dev)
 - Backend by [Supabase](https://supabase.com)
