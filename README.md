@@ -326,7 +326,7 @@ rm -rf node_modules/.vite dist && npm run dev
 
 ## 📄 License
 
-This project is private and proprietary.
+This project was developed for a real business and is currently open-sourced for portfolio demonstration purposes.
 
 ## 🙏 Acknowledgments
 
