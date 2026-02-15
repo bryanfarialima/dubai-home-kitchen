@@ -34,7 +34,7 @@ export const useProfile = (userId?: string) => {
         .single();
 
       if (error) throw error;
-      setProfile(data);
+      setProfile(data as UserProfile);
     } catch (error: any) {
       console.error("Error fetching profile:", error);
     } finally {
