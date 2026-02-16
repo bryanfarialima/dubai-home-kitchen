@@ -24,21 +24,12 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          // Simple vendor splitting - no circular dependencies
-          if (id.includes('node_modules')) {
-            // Group by package name to avoid circularity
-            if (id.includes('/@supabase/')) return 'supabase';
-            if (id.includes('/framer-motion/')) return 'framer';
-            if (id.includes('/@radix-ui/')) return 'radix';
-            if (id.includes('/lucide-react/')) return 'lucide';
-            if (id.includes('/i18next/')) return 'i18n';
-            if (id.includes('/@tanstack/')) return 'tanstack';
-            if (id.includes('/react-router')) return 'router';
-            if (id.includes('/react') || id.includes('/scheduler')) return 'react';
-            // Everything else in one chunk
-            return 'libs';
-          }
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': ['framer-motion', 'lucide-react', '@radix-ui/react-slot'],
+          'supabase-vendor': ['@supabase/supabase-js'],
+          'i18n-vendor': ['i18next', 'react-i18next'],
+          'query-vendor': ['@tanstack/react-query'],
         }
       }
     },
@@ -46,9 +37,8 @@ export default defineConfig(({ mode }) => ({
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true,
+        drop_console: false, // Keep console for debugging mobile issues
         drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info', 'console.debug'],
       },
     },
   },
