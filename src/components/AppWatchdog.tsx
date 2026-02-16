@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
-const WATCHDOG_TIMEOUT_MS = 12000;
+const WATCHDOG_TIMEOUT_MS = 20000; // Increased to 20s to avoid false positives
 
 const AppWatchdog = () => {
   const location = useLocation();

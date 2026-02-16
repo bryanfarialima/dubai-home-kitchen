@@ -28,6 +28,7 @@ const MenuSection = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     fetchData();
@@ -38,9 +39,9 @@ const MenuSection = () => {
       setLoading(true);
       setError(null);
       
-      // Add timeout to prevent hanging
+      // Add timeout to prevent hanging (increased to 15s for slower connections)
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Request timeout")), 8000)
+        setTimeout(() => reject(new Error("Request timeout")), 15000)
       );
 
       const fetchPromise = (async () => {
@@ -77,7 +78,18 @@ const MenuSection = () => {
       setMenuItems(items || []);
     } catch (error) {
       console.error("Error fetching menu:", error);
-      setError("Nao foi possivel carregar o cardapio. Tente novamente.");
+      
+      // Auto-retry only once after 2 seconds
+      if (retryCount === 0) {
+        setError("Nao foi possivel carregar o cardapio. Tentando novamente...");
+        setRetryCount(1);
+        setTimeout(() => {
+          console.log("Auto-retrying menu fetch...");
+          fetchData();
+        }, 2000);
+      } else {
+        setError("Nao foi possivel carregar o cardapio. Tente novamente.");
+      }
       const fallbackCategories = [
         { id: "mains", name: categoryTranslations.mains || "Principais", emoji: "🥘", sort_order: 1 },
         { id: "snacks", name: categoryTranslations.snacks || "Petiscos", emoji: "🥟", sort_order: 2 },

@@ -23,10 +23,12 @@ const clearClientCache = () => {
 	}
 };
 
+// Only clear cache on version change, don't auto-reload (prevents loop)
 if (storedVersion && storedVersion !== APP_VERSION) {
+	console.log("New version detected, clearing cache");
 	localStorage.setItem("app_version", APP_VERSION);
 	clearClientCache();
-	window.location.reload();
+	// Don't auto-reload, let user refresh manually
 } else if (!storedVersion) {
 	localStorage.setItem("app_version", APP_VERSION);
 }
