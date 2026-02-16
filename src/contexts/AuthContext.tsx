@@ -51,7 +51,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    let isMounted = true;
+
+    const init = async () => {
+      try {
+        const sessionTimeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Auth session timeout")), 8000)
+        );
+
+        const result: any = await Promise.race([
+          supabase.auth.getSession(),
+          sessionTimeout,
+        ]);
+
+        const session = result?.data?.session ?? null;
+        if (!isMounted) return;
+
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          await checkAdmin(session.user.id, session.user.user_metadata);
+        } else {
+          setIsAdmin(false);
+        }
+      } catch (error) {
+        if (!isMounted) return;
+        console.warn("Auth session restore failed:", error);
+        setSession(null);
+        setUser(null);
+        setIsAdmin(false);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    init();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!isMounted) return;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -62,32 +99,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     });
 
-    const sessionTimeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Auth session timeout")), 8000)
-    );
-
-    Promise.race([supabase.auth.getSession(), sessionTimeout])
-      .then(async (result: any) => {
-        const session = result?.data?.session ?? null;
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await checkAdmin(session.user.id, session.user.user_metadata);
-        } else {
-          setIsAdmin(false);
-        }
-      })
-      .catch((error) => {
-        console.warn("Auth session restore failed:", error);
-        setSession(null);
-        setUser(null);
-        setIsAdmin(false);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string) => {
