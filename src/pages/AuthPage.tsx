@@ -27,7 +27,7 @@ const AuthPage = () => {
     setLoading(true);
     try {
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Auth request timeout")), 20000)
+        setTimeout(() => reject(new Error("Auth request timeout")), 30000)
       );
 
       if (isLogin) {

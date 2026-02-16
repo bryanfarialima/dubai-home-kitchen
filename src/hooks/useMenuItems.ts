@@ -28,7 +28,7 @@ export const useMenuItems = () => {
     const fetchData = async () => {
         try {
             const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error("Menu data request timeout")), 20000)
+                setTimeout(() => reject(new Error("Menu data request timeout")), 30000)
             );
 
             const fetchPromise = Promise.all([

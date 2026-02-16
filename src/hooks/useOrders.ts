@@ -32,7 +32,7 @@ export const useOrders = (userId?: string) => {
             try {
                 setLoading(true);
                 const timeoutPromise = new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error("Orders request timeout")), 20000)
+                    setTimeout(() => reject(new Error("Orders request timeout")), 30000)
                 );
 
                 const fetchPromise = supabase

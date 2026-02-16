@@ -39,9 +39,9 @@ const MenuSection = () => {
       setLoading(true);
       setError(null);
       
-      // Add timeout to prevent hanging (increased to 15s for slower connections)
+      // Increased to 30s for very slow connections (3G/4G in Dubai)
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Request timeout")), 15000)
+        setTimeout(() => reject(new Error("Request timeout")), 30000)
       );
 
       const fetchPromise = (async () => {
@@ -76,20 +76,11 @@ const MenuSection = () => {
 
       setCategories(cats && cats.length > 0 ? cats : fallbackCategories);
       setMenuItems(items || []);
+      setError(null); // Clear any previous error
     } catch (error) {
       console.error("Error fetching menu:", error);
       
-      // Auto-retry only once after 2 seconds
-      if (retryCount === 0) {
-        setError("Nao foi possivel carregar o cardapio. Tentando novamente...");
-        setRetryCount(1);
-        setTimeout(() => {
-          console.log("Auto-retrying menu fetch...");
-          fetchData();
-        }, 2000);
-      } else {
-        setError("Nao foi possivel carregar o cardapio. Tente novamente.");
-      }
+      // Always show categories even if fetch fails
       const fallbackCategories = [
         { id: "mains", name: categoryTranslations.mains || "Principais", emoji: "🥘", sort_order: 1 },
         { id: "snacks", name: categoryTranslations.snacks || "Petiscos", emoji: "🥟", sort_order: 2 },
@@ -98,6 +89,19 @@ const MenuSection = () => {
         { id: "promos", name: categoryTranslations.promos || "Promoções", emoji: "🔥", sort_order: 5 },
       ];
       setCategories(fallbackCategories);
+      setMenuItems([]); // Show empty state
+      
+      // Auto-retry without user seeing the error
+      if (retryCount === 0) {
+        console.log("Auto-retrying menu fetch...");
+        setRetryCount(1);
+        setTimeout(() => {
+          fetchData();
+        }, 3000);
+      } else {
+        setError("Nao foi possivel carregar o cardapio. Tente novamente.");
+      }
+      // Categories already set in catch block
       setMenuItems([]);
     } finally {
       setLoading(false);
