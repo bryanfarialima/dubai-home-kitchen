@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { categories as localCategories, menuItems as localMenuItems } from "@/data/menuData";
 import FoodCard from "./FoodCard";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -66,28 +65,26 @@ const MenuSection = () => {
 
       const { cats, items } = await Promise.race([fetchPromise, timeoutPromise]) as any;
 
-      const fallbackCategories = localCategories
-        .filter((c) => c.id !== "all")
-        .map((c) => ({
-          id: c.id,
-          name: categoryTranslations[c.id] || c.label,
-          emoji: c.emoji,
-          sort_order: 0,
-        }));
+      const fallbackCategories = [
+        { id: "mains", name: categoryTranslations.mains || "Principais", emoji: "🥘", sort_order: 1 },
+        { id: "snacks", name: categoryTranslations.snacks || "Petiscos", emoji: "🥟", sort_order: 2 },
+        { id: "desserts", name: categoryTranslations.desserts || "Sobremesas", emoji: "🍨", sort_order: 3 },
+        { id: "combos", name: categoryTranslations.combos || "Combos", emoji: "📦", sort_order: 4 },
+        { id: "promos", name: categoryTranslations.promos || "Promoções", emoji: "🔥", sort_order: 5 },
+      ];
 
       setCategories(cats && cats.length > 0 ? cats : fallbackCategories);
       setMenuItems(items || []);
     } catch (error) {
       console.error("Error fetching menu:", error);
       setError("Nao foi possivel carregar o cardapio. Tente novamente.");
-      const fallbackCategories = localCategories
-        .filter((c) => c.id !== "all")
-        .map((c) => ({
-          id: c.id,
-          name: categoryTranslations[c.id] || c.label,
-          emoji: c.emoji,
-          sort_order: 0,
-        }));
+      const fallbackCategories = [
+        { id: "mains", name: categoryTranslations.mains || "Principais", emoji: "🥘", sort_order: 1 },
+        { id: "snacks", name: categoryTranslations.snacks || "Petiscos", emoji: "🥟", sort_order: 2 },
+        { id: "desserts", name: categoryTranslations.desserts || "Sobremesas", emoji: "🍨", sort_order: 3 },
+        { id: "combos", name: categoryTranslations.combos || "Combos", emoji: "📦", sort_order: 4 },
+        { id: "promos", name: categoryTranslations.promos || "Promoções", emoji: "🔥", sort_order: 5 },
+      ];
       setCategories(fallbackCategories);
       setMenuItems([]);
     } finally {

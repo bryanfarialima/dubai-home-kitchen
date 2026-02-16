@@ -1,7 +1,7 @@
 import { Plus, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import type { MenuItem } from "@/data/menuData";
+import type { MenuItem } from "@/types/menu";
 import { useCart } from "@/contexts/CartContext";
 
 interface FoodCardProps {
