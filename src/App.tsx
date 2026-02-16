@@ -8,6 +8,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import InstallPrompt from "@/components/InstallPrompt";
+import AppWatchdog from "@/components/AppWatchdog";
 import "@/i18n";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
@@ -51,6 +52,7 @@ const App = () => {
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <AppWatchdog />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<AuthPage />} />
