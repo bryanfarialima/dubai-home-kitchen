@@ -84,7 +84,9 @@ const OrdersPage = () => {
 
       <div className="container py-6 max-w-lg space-y-4">
         {loading ? (
-          <div className="text-center text-muted-foreground py-12">{t("loading")}</div>
+          <div className="text-center text-muted-foreground py-12" data-app-loading="true">
+            {t("loading")}
+          </div>
         ) : orders.length === 0 ? (
           <div className="text-center py-12 space-y-3">
             <Package className="w-12 h-12 text-muted-foreground mx-auto" />

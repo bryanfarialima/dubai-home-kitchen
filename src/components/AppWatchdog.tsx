@@ -6,12 +6,23 @@ const WATCHDOG_TIMEOUT_MS = 12000;
 const AppWatchdog = () => {
   const location = useLocation();
   const [show, setShow] = useState(false);
+  const hasLoading = () => Boolean(document.querySelector("[data-app-loading='true']"));
 
   useEffect(() => {
     setShow(false);
-    const timer = setTimeout(() => setShow(true), WATCHDOG_TIMEOUT_MS);
+    const timer = setTimeout(() => {
+      if (hasLoading()) setShow(true);
+    }, WATCHDOG_TIMEOUT_MS);
     return () => clearTimeout(timer);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (!show) return;
+    const interval = setInterval(() => {
+      if (!hasLoading()) setShow(false);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [show]);
 
   if (!show) return null;
 

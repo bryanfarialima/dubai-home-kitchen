@@ -168,7 +168,7 @@ const CheckoutPage = () => {
 
   if (profileLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center" data-app-loading="true">
         <p className="text-muted-foreground">{t("loading")}</p>
       </div>
     );
