@@ -27,10 +27,20 @@ export const useMenuItems = () => {
 
     const fetchData = async () => {
         try {
-            const [{ data: menuItems }, { data: cats }] = await Promise.all([
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("Menu data request timeout")), 8000)
+            );
+
+            const fetchPromise = Promise.all([
                 supabase.from("menu_items").select("*").order("name"),
                 supabase.from("categories").select("*").order("sort_order"),
             ]);
+
+            const [{ data: menuItems }, { data: cats }] = (await Promise.race([
+                fetchPromise,
+                timeoutPromise,
+            ])) as any;
+
             setItems(menuItems || []);
             setCategories(cats || []);
         } catch (error) {

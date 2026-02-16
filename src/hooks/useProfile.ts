@@ -27,11 +27,20 @@ export const useProfile = (userId?: string) => {
     }
 
     try {
-      const { data, error } = await supabase
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Profile request timeout")), 8000)
+      );
+
+      const fetchPromise = supabase
         .from("profiles")
         .select("*")
         .eq("user_id", userId)
         .single();
+
+      const { data, error } = (await Promise.race([
+        fetchPromise,
+        timeoutPromise,
+      ])) as any;
 
       if (error) {
         // No profile row yet, treat as empty profile

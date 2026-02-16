@@ -31,11 +31,20 @@ export const useOrders = (userId?: string) => {
         const fetchOrders = async () => {
             try {
                 setLoading(true);
-                const { data, error: fetchError } = await supabase
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error("Orders request timeout")), 8000)
+                );
+
+                const fetchPromise = supabase
                     .from("orders")
                     .select("*")
                     .eq("user_id", userId)
                     .order("created_at", { ascending: false });
+
+                const { data, error: fetchError } = (await Promise.race([
+                    fetchPromise,
+                    timeoutPromise,
+                ])) as any;
 
                 if (fetchError) throw fetchError;
                 
@@ -151,13 +160,28 @@ export const useAdminOrders = () => {
 
     useEffect(() => {
         const fetchOrders = async () => {
-            const { data } = await supabase
-                .from("orders")
-                .select("*")
-                .not("status", "in", "(cancelled,delivered)")
-                .order("created_at", { ascending: false });
-            setOrders(data || []);
-            setLoading(false);
+            try {
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error("Admin orders request timeout")), 8000)
+                );
+
+                const fetchPromise = supabase
+                    .from("orders")
+                    .select("*")
+                    .not("status", "in", "(cancelled,delivered)")
+                    .order("created_at", { ascending: false });
+
+                const { data } = (await Promise.race([
+                    fetchPromise,
+                    timeoutPromise,
+                ])) as any;
+
+                setOrders(data || []);
+            } catch (error) {
+                console.error("Error fetching admin orders:", error);
+            } finally {
+                setLoading(false);
+            }
         };
 
         fetchOrders();

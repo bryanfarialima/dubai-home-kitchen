@@ -62,16 +62,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await checkAdmin(session.user.id, session.user.user_metadata);
-      } else {
+    const sessionTimeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Auth session timeout")), 8000)
+    );
+
+    Promise.race([supabase.auth.getSession(), sessionTimeout])
+      .then(async (result: any) => {
+        const session = result?.data?.session ?? null;
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          await checkAdmin(session.user.id, session.user.user_metadata);
+        } else {
+          setIsAdmin(false);
+        }
+      })
+      .catch((error) => {
+        console.warn("Auth session restore failed:", error);
+        setSession(null);
+        setUser(null);
         setIsAdmin(false);
-      }
-      setLoading(false);
-    });
+      })
+      .finally(() => {
+        setLoading(false);
+      });
 
     return () => subscription.unsubscribe();
   }, []);
