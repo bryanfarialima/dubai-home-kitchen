@@ -24,11 +24,32 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor': ['react', 'react-dom', 'react-router-dom', '@tanstack/react-query', '@supabase/supabase-js'],
+        manualChunks: (id) => {
+          // Simple vendor splitting - no circular dependencies
+          if (id.includes('node_modules')) {
+            // Group by package name to avoid circularity
+            if (id.includes('/@supabase/')) return 'supabase';
+            if (id.includes('/framer-motion/')) return 'framer';
+            if (id.includes('/@radix-ui/')) return 'radix';
+            if (id.includes('/lucide-react/')) return 'lucide';
+            if (id.includes('/i18next/')) return 'i18n';
+            if (id.includes('/@tanstack/')) return 'tanstack';
+            if (id.includes('/react-router')) return 'router';
+            if (id.includes('/react') || id.includes('/scheduler')) return 'react';
+            // Everything else in one chunk
+            return 'libs';
+          }
         }
       }
     },
     chunkSizeWarningLimit: 600,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info', 'console.debug'],
+      },
+    },
   },
 }));

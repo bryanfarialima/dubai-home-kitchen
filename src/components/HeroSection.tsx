@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import heroImage from "@/assets/hero-food.jpg";
+import heroImage from "@/assets/hero-food.webp";
 
 const HeroSection = () => {
   const { t } = useTranslation();
