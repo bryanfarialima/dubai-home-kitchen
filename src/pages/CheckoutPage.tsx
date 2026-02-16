@@ -95,7 +95,7 @@ const CheckoutPage = () => {
     setLoading(true);
     try {
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Order request timeout")), 8000)
+        setTimeout(() => reject(new Error("Order request timeout")), 20000)
       );
 
       // Create order

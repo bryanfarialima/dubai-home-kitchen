@@ -28,7 +28,7 @@ export const useProfile = (userId?: string) => {
 
     try {
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Profile request timeout")), 8000)
+        setTimeout(() => reject(new Error("Profile request timeout")), 20000)
       );
 
       const fetchPromise = supabase

@@ -55,8 +55,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const init = async () => {
       try {
+        // Increased timeout for slow connections
         const sessionTimeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Auth session timeout")), 15000)
+          setTimeout(() => reject(new Error("Auth session timeout")), 20000)
         );
 
         const result: any = await Promise.race([

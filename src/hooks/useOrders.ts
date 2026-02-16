@@ -32,7 +32,7 @@ export const useOrders = (userId?: string) => {
             try {
                 setLoading(true);
                 const timeoutPromise = new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error("Orders request timeout")), 8000)
+                    setTimeout(() => reject(new Error("Orders request timeout")), 20000)
                 );
 
                 const fetchPromise = supabase
@@ -162,7 +162,7 @@ export const useAdminOrders = () => {
         const fetchOrders = async () => {
             try {
                 const timeoutPromise = new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error("Admin orders request timeout")), 8000)
+                    setTimeout(() => reject(new Error("Admin orders request timeout")), 20000)
                 );
 
                 const fetchPromise = supabase
