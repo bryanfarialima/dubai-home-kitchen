@@ -11,15 +11,16 @@ import InstallPrompt from "@/components/InstallPrompt";
 import AppWatchdog from "@/components/AppWatchdog";
 import "@/i18n";
 import Index from "./pages/Index";
-import AuthPage from "./pages/AuthPage";
-import CheckoutPage from "./pages/CheckoutPage";
-import OrdersPage from "./pages/OrdersPage";
-import ProfilePage from "./pages/ProfilePage";
-import DevTools from "./pages/DevTools";
-import NotFound from "./pages/NotFound";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// Lazy load pages for better code splitting
+const AuthPage = lazy(() => import("./pages/AuthPage"));
+const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
+const OrdersPage = lazy(() => import("./pages/OrdersPage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
+const DevTools = lazy(() => import("./pages/DevTools"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Memoize query client to prevent recreation
 const queryClient = new QueryClient({
@@ -34,7 +35,7 @@ const queryClient = new QueryClient({
   },
 });
 
-const AdminLoader = () => (
+const PageLoader = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
     <Skeleton className="w-96 h-96" />
   </div>
@@ -55,13 +56,13 @@ const App = () => {
               <AppWatchdog />
               <Routes>
                 <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<AuthPage />} />
-                <Route path="/checkout" element={<CheckoutPage />} />
-                <Route path="/orders" element={<OrdersPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/admin" element={<Suspense fallback={<AdminLoader />}><AdminPage /></Suspense>} />
-                <Route path="/devtools" element={<DevTools />} />
-                <Route path="*" element={<NotFound />} />
+                <Route path="/auth" element={<Suspense fallback={<PageLoader />}><AuthPage /></Suspense>} />
+                <Route path="/checkout" element={<Suspense fallback={<PageLoader />}><CheckoutPage /></Suspense>} />
+                <Route path="/orders" element={<Suspense fallback={<PageLoader />}><OrdersPage /></Suspense>} />
+                <Route path="/profile" element={<Suspense fallback={<PageLoader />}><ProfilePage /></Suspense>} />
+                <Route path="/admin" element={<Suspense fallback={<PageLoader />}><AdminPage /></Suspense>} />
+                <Route path="/devtools" element={<Suspense fallback={<PageLoader />}><DevTools /></Suspense>} />
+                <Route path="*" element={<Suspense fallback={<PageLoader />}><NotFound /></Suspense>} />
               </Routes>
               <WhatsAppButton />
               <InstallPrompt />
