@@ -26,13 +26,23 @@ const AuthPage = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Auth request timeout")), 8000)
+      );
+
       if (isLogin) {
-        const { error } = await signIn(email, password);
+        const { error } = (await Promise.race([
+          signIn(email, password),
+          timeoutPromise,
+        ])) as any;
         if (error) throw error;
         toast.success(t("welcome_back"));
         navigate("/");
       } else {
-        const { error } = await signUp(email, password, fullName);
+        const { error } = (await Promise.race([
+          signUp(email, password, fullName),
+          timeoutPromise,
+        ])) as any;
         if (error) throw error;
         toast.success(t("account_created"));
       }

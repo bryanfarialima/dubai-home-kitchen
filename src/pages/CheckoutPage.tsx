@@ -94,8 +94,12 @@ const CheckoutPage = () => {
 
     setLoading(true);
     try {
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Order request timeout")), 8000)
+      );
+
       // Create order
-      const { data: order, error } = await supabase
+      const orderInsertPromise = supabase
         .from("orders")
         .insert({
           user_id: user.id,
@@ -112,6 +116,11 @@ const CheckoutPage = () => {
         .select()
         .single();
 
+      const { data: order, error } = (await Promise.race([
+        orderInsertPromise,
+        timeoutPromise,
+      ])) as any;
+
       if (error) {
         console.error("Order creation error:", error);
         throw new Error(`Erro ao criar pedido: ${error.message}`);
@@ -125,7 +134,11 @@ const CheckoutPage = () => {
         unit_price: item.price,
       }));
 
-      const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
+      const itemsInsertPromise = supabase.from("order_items").insert(orderItems);
+      const { error: itemsError } = (await Promise.race([
+        itemsInsertPromise,
+        timeoutPromise,
+      ])) as any;
       if (itemsError) {
         console.error("Order items error:", itemsError);
         throw new Error(`Erro ao adicionar itens: ${itemsError.message}`);
