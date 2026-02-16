@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import heroImage from "@/assets/hero-food.jpg";
-import heroImageWebp from "@/assets/hero-food.webp";
 
 const HeroSection = () => {
   const { t } = useTranslation();
@@ -9,15 +8,12 @@ const HeroSection = () => {
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-0">
-        <picture>
-          <source srcSet={heroImageWebp} type="image/webp" />
-          <img 
-            src={heroImage} 
-            alt="Brazilian homemade food" 
-            className="w-full h-full object-cover"
-            loading="eager"
-          />
-        </picture>
+        <img 
+          src={heroImage} 
+          alt="Brazilian homemade food" 
+          className="w-full h-full object-cover"
+          loading="eager"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/50 to-foreground/20" />
       </div>
 
