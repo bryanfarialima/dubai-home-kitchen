@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import FoodCard from "./FoodCard";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,42 +29,47 @@ const MenuSection = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const fetchIdRef = useRef(0); // Track latest fetch to prevent race conditions
 
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
+    const currentFetchId = ++fetchIdRef.current; // Increment and capture current fetch ID
+    
     try {
       setLoading(true);
       setError(null);
       
-      // Use AbortController for proper request cancellation
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      // Simple timeout wrapper without AbortController (Supabase doesn't support it)
+      const fetchWithTimeout = async (timeoutMs: number) => {
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout')), timeoutMs)
+        );
+        
+        return Promise.race([
+          Promise.all([
+            supabase.from("categories").select("*").order("sort_order"),
+            supabase.from("menu_items").select("*").eq("is_available", true)
+          ]),
+          timeoutPromise
+        ]);
+      };
 
-      try {
-        // Fetch categories
-        const { data: cats, error: catsError } = await supabase
-          .from("categories")
-          .select("*")
-          .order("sort_order")
-          .abortSignal(controller.signal);
+      const [catsResult, itemsResult] = await fetchWithTimeout(30000) as any;
+      
+      // Only update state if this is still the latest fetch (prevent race condition)
+      if (currentFetchId !== fetchIdRef.current) {
+        console.log('Discarding stale fetch result');
+        return;
+      }
+      
+      if (catsResult.error) throw catsResult.error;
+      if (itemsResult.error) throw itemsResult.error;
 
-        if (catsError) throw catsError;
-
-        // Fetch menu items
-        const { data: items, error: itemsError } = await supabase
-          .from("menu_items")
-          .select("*")
-          .eq("is_available", true)
-          .abortSignal(controller.signal);
-
-        if (itemsError) throw itemsError;
-
-        clearTimeout(timeoutId);
-        const cats_data = cats;
-        const items_data = items;
+      const cats_data = catsResult.data;
+      const items_data = itemsResult.data;
 
         const fallbackCategories = [
           { id: "mains", name: categoryTranslations.mains || "Principais", emoji: "🥘", sort_order: 1 },
@@ -74,14 +79,15 @@ const MenuSection = () => {
           { id: "promos", name: categoryTranslations.promos || "Promoções", emoji: "🔥", sort_order: 5 },
         ];
 
-        setCategories(cats_data && cats_data.length > 0 ? cats_data : fallbackCategories);
-        setMenuItems(items_data || []);
-        setError(null); // Clear any previous error
-      } catch (innerError: any) {
-        clearTimeout(timeoutId);
-        throw innerError;
+      setCategories(cats_data && cats_data.length > 0 ? cats_data : fallbackCategories);
+      setMenuItems(items_data || []);
+      setError(null); // Clear any previous error
+    } catch (error: any) {
+      // Only handle error if this is still the latest fetch
+      if (currentFetchId !== fetchIdRef.current) {        console.log('Discarding stale error');
+        return;
       }
-    } catch (error) {
+      
       console.error("Error fetching menu:", error);
       
       // Always show categories even if fetch fails

@@ -27,23 +27,18 @@ export const useMenuItems = () => {
 
     const fetchData = async () => {
         try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000);
-
+            // No timeout - let Supabase handle connection issues naturally
+            // This prevents timeout racing with successful slow requests
             const [{ data: menuItems }, { data: cats }] = await Promise.all([
-                supabase.from("menu_items").select("*").order("name").abortSignal(controller.signal),
-                supabase.from("categories").select("*").order("sort_order").abortSignal(controller.signal),
+                supabase.from("menu_items").select("*").order("name"),
+                supabase.from("categories").select("*").order("sort_order"),
             ]);
 
-            clearTimeout(timeoutId);
             setItems(menuItems || []);
             setCategories(cats || []);
         } catch (error: any) {
-            if (error.name === 'AbortError') {
-                console.error("Menu data request timed out after 30s");
-            } else {
-                console.error("Error fetching menu data:", error);
-            }
+            console.error("Error fetching menu data:", error);
+            // Don't throw - let component decide how to handle
         } finally {
             setLoading(false);
         }

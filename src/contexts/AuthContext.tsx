@@ -55,7 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const init = async () => {
       try {
-        // Use try-catch for timeout handling (Supabase doesn't support AbortController yet)
+        // Let Supabase auth handle timeouts naturally (has built-in retry logic)
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
