@@ -55,17 +55,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const init = async () => {
       try {
-        // Increased timeout for slow connections
-        const sessionTimeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Auth session timeout")), 30000)
-        );
+        // Use try-catch for timeout handling (Supabase doesn't support AbortController yet)
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.warn("Auth session error:", error);
+        }
 
-        const result: any = await Promise.race([
-          supabase.auth.getSession(),
-          sessionTimeout,
-        ]);
-
-        const session = result?.data?.session ?? null;
+        const session = data?.session ?? null;
         if (!isMounted) return;
 
         setSession(session);

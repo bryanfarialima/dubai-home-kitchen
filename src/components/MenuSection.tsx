@@ -39,17 +39,17 @@ const MenuSection = () => {
       setLoading(true);
       setError(null);
       
-      // Increased to 30s for very slow connections (3G/4G in Dubai)
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Request timeout")), 30000)
-      );
+      // Use AbortController for proper request cancellation
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      const fetchPromise = (async () => {
+      try {
         // Fetch categories
         const { data: cats, error: catsError } = await supabase
           .from("categories")
           .select("*")
-          .order("sort_order");
+          .order("sort_order")
+          .abortSignal(controller.signal);
 
         if (catsError) throw catsError;
 
@@ -57,26 +57,30 @@ const MenuSection = () => {
         const { data: items, error: itemsError } = await supabase
           .from("menu_items")
           .select("*")
-          .eq("is_available", true);
+          .eq("is_available", true)
+          .abortSignal(controller.signal);
 
         if (itemsError) throw itemsError;
 
-        return { cats, items };
-      })();
+        clearTimeout(timeoutId);
+        const cats_data = cats;
+        const items_data = items;
 
-      const { cats, items } = await Promise.race([fetchPromise, timeoutPromise]) as any;
+        const fallbackCategories = [
+          { id: "mains", name: categoryTranslations.mains || "Principais", emoji: "🥘", sort_order: 1 },
+          { id: "snacks", name: categoryTranslations.snacks || "Petiscos", emoji: "🥟", sort_order: 2 },
+          { id: "desserts", name: categoryTranslations.desserts || "Sobremesas", emoji: "🍨", sort_order: 3 },
+          { id: "combos", name: categoryTranslations.combos || "Combos", emoji: "📦", sort_order: 4 },
+          { id: "promos", name: categoryTranslations.promos || "Promoções", emoji: "🔥", sort_order: 5 },
+        ];
 
-      const fallbackCategories = [
-        { id: "mains", name: categoryTranslations.mains || "Principais", emoji: "🥘", sort_order: 1 },
-        { id: "snacks", name: categoryTranslations.snacks || "Petiscos", emoji: "🥟", sort_order: 2 },
-        { id: "desserts", name: categoryTranslations.desserts || "Sobremesas", emoji: "🍨", sort_order: 3 },
-        { id: "combos", name: categoryTranslations.combos || "Combos", emoji: "📦", sort_order: 4 },
-        { id: "promos", name: categoryTranslations.promos || "Promoções", emoji: "🔥", sort_order: 5 },
-      ];
-
-      setCategories(cats && cats.length > 0 ? cats : fallbackCategories);
-      setMenuItems(items || []);
-      setError(null); // Clear any previous error
+        setCategories(cats_data && cats_data.length > 0 ? cats_data : fallbackCategories);
+        setMenuItems(items_data || []);
+        setError(null); // Clear any previous error
+      } catch (innerError: any) {
+        clearTimeout(timeoutId);
+        throw innerError;
+      }
     } catch (error) {
       console.error("Error fetching menu:", error);
       

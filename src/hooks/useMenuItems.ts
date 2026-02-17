@@ -27,24 +27,23 @@ export const useMenuItems = () => {
 
     const fetchData = async () => {
         try {
-            const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error("Menu data request timeout")), 30000)
-            );
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-            const fetchPromise = Promise.all([
-                supabase.from("menu_items").select("*").order("name"),
-                supabase.from("categories").select("*").order("sort_order"),
+            const [{ data: menuItems }, { data: cats }] = await Promise.all([
+                supabase.from("menu_items").select("*").order("name").abortSignal(controller.signal),
+                supabase.from("categories").select("*").order("sort_order").abortSignal(controller.signal),
             ]);
 
-            const [{ data: menuItems }, { data: cats }] = (await Promise.race([
-                fetchPromise,
-                timeoutPromise,
-            ])) as any;
-
+            clearTimeout(timeoutId);
             setItems(menuItems || []);
             setCategories(cats || []);
-        } catch (error) {
-            console.error("Error fetching menu data:", error);
+        } catch (error: any) {
+            if (error.name === 'AbortError') {
+                console.error("Menu data request timed out after 30s");
+            } else {
+                console.error("Error fetching menu data:", error);
+            }
         } finally {
             setLoading(false);
         }
