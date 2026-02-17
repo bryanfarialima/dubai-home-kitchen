@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
@@ -19,12 +19,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const checkingAdminRef = React.useRef(false);
 
   const checkAdmin = async (userId: string, userMetadata?: any) => {
+    // Prevent multiple concurrent admin checks
+    if (checkingAdminRef.current) {
+      return;
+    }
+    
+    checkingAdminRef.current = true;
     try {
       // First, check user_metadata.role (set by promotion script)
       if (userMetadata?.role === 'admin') {
         setIsAdmin(true);
+        checkingAdminRef.current = false;
         return;
       }
 
@@ -47,6 +55,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err) {
       console.error('Error in checkAdmin:', err);
       setIsAdmin(false);
+    } finally {
+      checkingAdminRef.current = false;
     }
   };
 
@@ -103,7 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = useCallback(async (email: string, password: string, fullName: string) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -113,14 +123,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       },
     });
     return { error: error as Error | null };
-  };
+  }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error as Error | null };
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut({ scope: "local" });
     if (error) {
       console.error("Supabase signOut error:", error.message);
@@ -136,10 +146,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     setSession(null);
     setIsAdmin(false);
-  };
+  }, []);
+
+  const value = useMemo(() => ({
+    user, 
+    session, 
+    isAdmin, 
+    loading, 
+    signUp, 
+    signIn, 
+    signOut
+  }), [user, session, isAdmin, loading, signUp, signIn, signOut]);
 
   return (
-    <AuthContext.Provider value={{ user, session, isAdmin, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

@@ -30,13 +30,22 @@ const MenuSection = () => {
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const fetchIdRef = useRef(0); // Track latest fetch to prevent race conditions
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
+    isMountedRef.current = true;
     fetchData();
+    
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
   const fetchData = async () => {
     const currentFetchId = ++fetchIdRef.current; // Increment and capture current fetch ID
+    
+    // Don't fetch if component is unmounted
+    if (!isMountedRef.current) return;
     
     try {
       setLoading(true);
@@ -59,9 +68,9 @@ const MenuSection = () => {
 
       const [catsResult, itemsResult] = await fetchWithTimeout(30000) as any;
       
-      // Only update state if this is still the latest fetch (prevent race condition)
-      if (currentFetchId !== fetchIdRef.current) {
-        console.log('Discarding stale fetch result');
+      // Only update state if this is still the latest fetch AND component is mounted
+      if (!isMountedRef.current || currentFetchId !== fetchIdRef.current) {
+        console.log('Discarding stale fetch result (unmounted or superseded)');
         return;
       }
       
@@ -83,8 +92,9 @@ const MenuSection = () => {
       setMenuItems(items_data || []);
       setError(null); // Clear any previous error
     } catch (error: any) {
-      // Only handle error if this is still the latest fetch
-      if (currentFetchId !== fetchIdRef.current) {        console.log('Discarding stale error');
+      // Only handle error if component is mounted and this is the latest fetch
+      if (!isMountedRef.current || currentFetchId !== fetchIdRef.current) {
+        console.log('Discarding stale error (unmounted or superseded)');
         return;
       }
       
