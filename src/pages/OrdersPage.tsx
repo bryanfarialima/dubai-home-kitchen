@@ -36,20 +36,12 @@ const OrdersPage = () => {
     const fetchOrders = async () => {
       try {
         setLoading(true);
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Orders request timeout")), 30000)
-        );
 
-        const fetchPromise = supabase
+        const { data } = await supabase
           .from("orders")
           .select("*")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false });
-
-        const { data } = (await Promise.race([
-          fetchPromise,
-          timeoutPromise,
-        ])) as any;
 
         setOrders(data || []);
       } catch (error) {

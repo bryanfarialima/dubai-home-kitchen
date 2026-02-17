@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
-const WATCHDOG_TIMEOUT_MS = 35000; // 35s to match increased request timeouts
+const WATCHDOG_TIMEOUT_MS = 60000; // 60s - no artificial timeouts, let Supabase retry naturally
 
 const AppWatchdog = () => {
   const location = useLocation();

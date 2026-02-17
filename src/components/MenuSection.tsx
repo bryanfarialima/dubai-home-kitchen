@@ -51,22 +51,12 @@ const MenuSection = () => {
       setLoading(true);
       setError(null);
       
-      // Simple timeout wrapper without AbortController (Supabase doesn't support it)
-      const fetchWithTimeout = async (timeoutMs: number) => {
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout')), timeoutMs)
-        );
-        
-        return Promise.race([
-          Promise.all([
-            supabase.from("categories").select("*").order("sort_order"),
-            supabase.from("menu_items").select("*").eq("is_available", true)
-          ]),
-          timeoutPromise
-        ]);
-      };
-
-      const [catsResult, itemsResult] = await fetchWithTimeout(30000) as any;
+      // Let Supabase handle timeouts naturally - it has built-in retry and timeout logic
+      // AppWatchdog (35s) protects against complete hangs
+      const [catsResult, itemsResult] = await Promise.all([
+        supabase.from("categories").select("*").order("sort_order"),
+        supabase.from("menu_items").select("*").eq("is_available", true)
+      ]);
       
       // Only update state if this is still the latest fetch AND component is mounted
       if (!isMountedRef.current || currentFetchId !== fetchIdRef.current) {
